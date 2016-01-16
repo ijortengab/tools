@@ -470,10 +470,6 @@ abstract class AbstractWebCrawler
             $this->browser->execute();
             $this->visitAfter();
 
-            // Merge browser error.
-            $merge_log = array_merge($this->log->get(), $this->browser->log->get());
-            $this->log->set($merge_log);
-
             // Run context handler.
             $visit_after = $this->configuration('menu][' . $menu_name . '][visit_after');
             if (!empty($visit_after)) {
