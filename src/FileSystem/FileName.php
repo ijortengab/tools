@@ -1,14 +1,14 @@
 <?php
 
 namespace IjorTengab\FileSystem;
-  
+
 class FileName
 {
     /**
      * Mendapatkan nama file baru jika nama file pada argument $basename
      * sudah exists di dalam $directory. Nama file baru didapat dengan
      * auto increment dari $basename. Code bersumber dari drupal versi 7.
-     * 
+     *
      * @link
      *   https://api.drupal.org/api/function/file_create_filename/7
      */

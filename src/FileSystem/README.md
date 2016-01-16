@@ -6,14 +6,14 @@ Package FileSystem terdiri dari:
   - Class ```IjorTengab\FileSystem\Log```
   - Class ```IjorTengab\FileSystem\FileName```
 
-Requirement:  
+Requirement:
   - PHP > 5.4.0
   - Class ```IjorTengab\Logger\Log```
 
 ## IjorTengab\FileSystem\WorkingDirectory
 
-WorkingDirectory adalah class yang menjadikan CWD (Current Working Directory) 
-sebagai sebuah object. Working directory pada object ini terpisah dengan 
+WorkingDirectory adalah class yang menjadikan CWD (Current Working Directory)
+sebagai sebuah object. Working directory pada object ini terpisah dengan
 CWD milik PHP, sehingga dapat dibuat berbagai instance untuk direktori lainnya.
 
 ```php
@@ -29,9 +29,9 @@ echo getcwd(); // Output: /var/www
 echo $cwd->getcwd(); // Output: /home/ijortengab/secret
 ```
 
-Object ini nanti dapat dimasukkan file-file kedalamnya sebagai sebuah register. 
-Jika terjadi perpindahan working direktori ke tempat lain, maka file-file yang 
-telah ter-register tersebut akan turut otomatis pindah. 
+Object ini nanti dapat dimasukkan file-file kedalamnya sebagai sebuah register.
+Jika terjadi perpindahan working direktori ke tempat lain, maka file-file yang
+telah ter-register tersebut akan turut otomatis pindah.
 
 ```php
 $cwd = new WorkingDirectory('/home/ijortengab');
@@ -40,8 +40,8 @@ $cwd->addFile('my.txt');
 $cwd->addFile('my.mp4');
 $cwd->chDir('secret');
 ```
-Contoh diatas akan memindahkan keseluruhan file (my.html, my.txt, my.mp4) 
-kedalam direktori secret (otomatis membuat direktori). 
+Contoh diatas akan memindahkan keseluruhan file (my.html, my.txt, my.mp4)
+kedalam direktori secret (otomatis membuat direktori).
 
 WorkingDirectory memudahkan untuk mengubah path menjadi absolute.
 
@@ -67,7 +67,7 @@ WorkingDirectory::prepareDirectory($dir);
 // Mengecek apakah path relative alih-alih absolute.
 WorkingDirectory::isRelativePath($path);
 
-// Mengembalikan $basename yang mengandung suffix integer autoincrement jika 
+// Mengembalikan $basename yang mengandung suffix integer autoincrement jika
 file sudah exists dalam $directory.
 WorkingDirectory::fileName($basename, $directory);
 ```
@@ -89,8 +89,8 @@ $log = Log::getAll();
 
 ## IjorTengab\FileSystem\FileName
 
-Menyediakan method createUnique untuk mengantisipasi filename yang telah exists 
-dengan cara menambahkan suffix integer autoincrement pada filename. 
+Menyediakan method createUnique untuk mengantisipasi filename yang telah exists
+dengan cara menambahkan suffix integer autoincrement pada filename.
 
 Contoh:
  - File.jpg

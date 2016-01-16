@@ -21,7 +21,7 @@ class Modules
     const SCANDIR_DEEP = 5;
 
     public static $scan_module_directory = true;
-    
+
     public static $modules = [];
 
     protected static $autoload;
@@ -34,8 +34,8 @@ class Modules
     protected static $interface_require = [
         'IjorTengab\ActionWrapper\ModuleInterface',
     ];
-    
-    public static function add(array $list) 
+
+    public static function add(array $list)
     {
         self::$modules = array_merge(self::$modules, $list);
     }

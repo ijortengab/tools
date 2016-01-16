@@ -23,7 +23,7 @@ class Timer
     /**
      * Read waktu yang telah berjalan.
      */
-    public function read() 
+    public function read()
     {
         $stop = microtime(TRUE);
         $diff = round(($stop - $this->start) * 1000, 2);
@@ -37,9 +37,9 @@ class Timer
      * Check count down.
      * @return sisa waktu
      */
-    public function remaining() 
+    public function remaining()
     {
-        if (null !== $this->count_down) {            
+        if (null !== $this->count_down) {
             return round($this->count_down - ($this->read()));
         }
     }

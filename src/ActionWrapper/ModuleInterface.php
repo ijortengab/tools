@@ -26,7 +26,7 @@ interface ModuleInterface
      * Todo.
      */
     public function getResult();
-    
+
     /**
      * Todo.
      */

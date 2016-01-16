@@ -8,6 +8,7 @@ use IjorTengab\Browser\Browser;
 use IjorTengab\FileSystem\WorkingDirectory;
 use IjorTengab\ObjectHelper\PropertyArrayManagerTrait;
 use IjorTengab\ObjectHelper\CamelCase;
+use IjorTengab\Logger\Log;
 
 /**
  *
@@ -31,7 +32,7 @@ use IjorTengab\ObjectHelper\CamelCase;
  * Abstract ini membutuhkan
  *   - class Browser (ijortengab/browser),
  *   - class ParseHtml (ijortengab/parse-html),
- *   - class ParseInfo (ijortengab/parse-info), 
+ *   - class ParseInfo (ijortengab/parse-info),
  *   - Todo.
  *
  * Tambahkan require berikut pada composer.json bila abstract ini digunakan
@@ -58,7 +59,7 @@ abstract class AbstractWebCrawler
      * Loading traits.
      */
     use PropertyArrayManagerTrait;
-    
+
     /**
      * Current Working Directory (cwd), dibuat terpisah dengan cwd milik PHP.
      */
@@ -120,7 +121,7 @@ abstract class AbstractWebCrawler
      * Property tempat menampung log yang terjadi selama proses.
      * Hanya dua tipe log: notice dan error.
      */
-    public $log = [];
+    public $log;
 
     /**
      * Array tempat menampung nilai konfigurasi. Property ini akan
@@ -180,6 +181,9 @@ abstract class AbstractWebCrawler
 
     public function __construct()
     {
+        // Init log.
+        $this->log = new Log;
+
         // Cwd must initialize when construct.
         $this->cwd = new WorkingDirectory($this->defaultCwd());
     }
@@ -285,7 +289,7 @@ abstract class AbstractWebCrawler
      * file configuration).
      */
     protected function configurationInit()
-    {        
+    {
         $filename = $this->cwd->getAbsolutePath($this->configuration_custom_filename);
         $this->cwd->addFile($this->configuration_custom_filename);
         $custom = array();
@@ -306,7 +310,7 @@ abstract class AbstractWebCrawler
      * oleh property $configuration_custom_filename;
      */
     protected function configurationDump()
-    {   
+    {
         $filename = $this->cwd->getAbsolutePath($this->configuration_custom_filename);
         $file_exists = $this->configuration_custom_file_is_exists;
 
@@ -326,7 +330,7 @@ abstract class AbstractWebCrawler
     protected function browserInit()
     {
         $browser_settings = $this->browser;
-        $this->browser = new Browser;
+        $this->browser = new Browser(null, $this->log);
         $this->browser->cwd->chDir($this->cwd->getCwd());
         // User Agent.
         $user_agent = $this->configuration('user_agent');
@@ -371,11 +375,13 @@ abstract class AbstractWebCrawler
             $this->browserInit();
             $target = $this->target;
             if (empty($target)) {
-                throw new ExecuteException('Target has not been defined.');
+                $this->log->error('Target has not been defined.');
+                throw new ExecuteException;
             }
             $steps = $this->configuration('target][' . $target);
             if (empty($steps)) {
-                throw new ExecuteException('Steps definition for target: "'.$target.'" has not been defined.');
+                $this->log->error('Steps definition for target {target} has not been defined.', ['target' => $target]);
+                throw new ExecuteException;
             }
             $this->steps = $steps;
 
@@ -385,7 +391,7 @@ abstract class AbstractWebCrawler
                 $handler = [];
                 // Priority from key handler, alternative from key type.
                 !isset($this->step['handler']) or $handler[] = $this->step['handler'];
-                !isset($this->step['type']) or $handler[] = $this->step['type'];              
+                !isset($this->step['type']) or $handler[] = $this->step['type'];
                 $this->executeHandler($handler, true, true);
                 // Jika ada handler yang memaksa stop.
                 if ($this->execute_stop) {
@@ -399,11 +405,7 @@ abstract class AbstractWebCrawler
             }
         }
         catch (ExecuteException $e) {
-            $this->log['error'][] = 'ExecuteException. ' . $e->getMessage();
-            // pe er disini.
-            $a = $this->log;
-            $debugname = 'a'; echo "\r\n<pre>" . __FILE__ . ":" . __LINE__ . "\r\n". 'var_dump(' . $debugname . '): '; var_dump($$debugname); echo "</pre>\r\n";
-            
+            $this->log->error('ExecuteException.');
         }
         return $this;
     }
@@ -420,7 +422,7 @@ abstract class AbstractWebCrawler
         $handlers = (array) $handlers;
         foreach ($handlers as $method) {
             if (method_exists($this, $method)) {
-                call_user_func(array($this, $method));                
+                call_user_func(array($this, $method));
             }
             elseif ($execute_alternative && method_exists($this, CamelCase::convertFromUnderScore($method))) {
                 call_user_func(array($this, CamelCase::convertFromUnderScore($method)));
@@ -469,29 +471,29 @@ abstract class AbstractWebCrawler
             $this->visitAfter();
 
             // Merge browser error.
-            array_key_exists('error', $this->log) or $this->log['error'] = [];
-            $this->log['error'] = array_merge($this->log['error'], $this->browser->error);
+            $merge_log = array_merge($this->log->get(), $this->browser->log->get());
+            $this->log->set($merge_log);
 
             // Run context handler.
             $visit_after = $this->configuration('menu][' . $menu_name . '][visit_after');
             if (!empty($visit_after)) {
                 if (empty($this->browser->result->data)) {
-                    throw new VisitException('Empty html data.');
+                    $this->log->error('Empty html data.');
+                    throw new VisitException;
                 }
                 // Use ParseHtml.
                 $this->html = new ParseHtml($this->browser->result->data);
                 $context_founded = false;
                 foreach ($visit_after as $indication => $handler) {
-                    if ($this->visitAfterIndicationOf($indication)) {                        
+                    if ($this->visitAfterIndicationOf($indication)) {
                         $this->executeHandler($handler, true);
                         $context_founded = true;
                         break;
                     }
                 }
                 if (!$context_founded) {
-                    $error = 'Verifikasi menu @menu gagal, layout kemungkinan mengalami perubahan.';
-                    $error = str_replace('@menu', $menu_name, $error);
-                    throw new VisitException($error);
+                    $this->log->error('Verifikasi menu {menu} gagal, layout kemungkinan mengalami perubahan.', ['menu' => $menu_name]);
+                    throw new VisitException;
                 }
             }
 
@@ -503,7 +505,7 @@ abstract class AbstractWebCrawler
             }
         }
         catch (VisitException $e) {
-            $this->log['error'][] = 'VisitException. Result not expected. ' . $e->getMessage();
+            $this->log->error('VisitException. Result not expected.');
             $this->execute_stop = true;
         }
     }
@@ -521,7 +523,7 @@ abstract class AbstractWebCrawler
     {
         $target = $this->target;
         $this->steps = $this->configuration('target][' . $target);
-        $this->log['notice'][] = 'Reset Execute.';
+        $this->log->notice('Reset Execute.');
     }
 
     /**

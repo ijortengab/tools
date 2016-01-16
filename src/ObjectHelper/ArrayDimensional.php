@@ -72,12 +72,12 @@ class ArrayDimensional
             $result[$key] = $value;
         }
     }
-    
+
     /**
      * Todo.
      */
-    public static function expand() 
+    public static function expand()
     {
-        
+
     }
 }

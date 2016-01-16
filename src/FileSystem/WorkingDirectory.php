@@ -2,6 +2,8 @@
 
 namespace IjorTengab\FileSystem;
 
+use IjorTengab\Logger\Log;
+
 /**
  * Menjadikan CWD (Current Working Directory) sebagai sebuah object.
  */
@@ -12,8 +14,18 @@ class WorkingDirectory
 
     protected $working_directory;
 
-    public function __construct($dir = null)
+    public $log;
+
+    public function __construct($dir = null, Log $log = null)
     {
+        // Init log.
+        if (null === $log) {
+            $this->log = new Log;
+        }
+        else {
+            $this->log = $log;
+        }
+
         if (null !== $dir) {
             return $this->chDir($dir);
         }
@@ -66,10 +78,10 @@ class WorkingDirectory
     /**
      * $filename bisa path relative parent menggunakan karakter ".."
      * contoh: $filename = '../file.txt';
-     * $filename bisa absolute path asal posisi file berada didalam 
+     * $filename bisa absolute path asal posisi file berada didalam
      * working direktori.
      * contoh: $this->working_direktori = '/home/ijortengab';
-     * jika: $filename = '/home/ijortengab/file.txt'; maka berhasil 
+     * jika: $filename = '/home/ijortengab/file.txt'; maka berhasil
      * ter-register
      * jika: $filename = '/home/guest/file.txt'; maka gagal ter-register
      */
@@ -107,7 +119,7 @@ class WorkingDirectory
             if ($this->isRelativePath($dir)) {
                 $dir = $cwd . $_ . $dir;
             }
-            if ($this->prepareDirectory($dir) === false) {
+            if ($this->prepareDirectory($dir, $this->log) === false) {
                 throw new \Exception;
             }
             // Finish.
@@ -121,12 +133,12 @@ class WorkingDirectory
             if (null === $this->working_directory) {
                 $this->working_directory = getcwd();
             }
-            Log::setError('Change Directory failed.', ['cwd' => getcwd()]);
-            Log::setNotice('Working Direktori kembali ke semula: {cwd}', ['cwd' => $this->working_directory]);
+            $this->log->error('Change Directory failed.', ['cwd' => getcwd()]);
+            $this->log->notice('Working Direktori kembali ke semula: {cwd}', ['cwd' => $this->working_directory]);
         }
     }
 
-    public function getRegisteredFiles() 
+    public function getRegisteredFiles()
     {
         return $this->register();
     }
@@ -165,13 +177,13 @@ class WorkingDirectory
      * Memindahkan keseluruhan files dari direktori lama ke direktori baru.
      * parameter $files adalah array dengan path relative.
      */
-    public static function movingFiles($old, $new, $files)
+    public static function movingFiles($old, $new, $files, Log $log = null)
     {
         $moved = [];
         foreach ($files as $file) {
             $oldpath = $old . DIRECTORY_SEPARATOR . $file;
             $newpath = $new . DIRECTORY_SEPARATOR . $file;
-            if (self::prepareDirectory(dirname($newpath)) && self::rename($oldpath, $newpath)) {
+            if (self::prepareDirectory(dirname($newpath), $log) && self::rename($oldpath, $newpath)) {
                 $moved[] = $file;
             }
         }
@@ -184,25 +196,23 @@ class WorkingDirectory
                 'count' => $count_diff,
                 'files' => implode(', ', $diff),
             ];
-            Log::setError('Sebanyak {count} file gagal dipindahkan: {files}', $context);
+            null === $log or $log->error('Sebanyak {count} file gagal dipindahkan: {files}', $context);
         }
         $context = ['count' => $count_moved];
-        Log::setNotice('Berhasil memindahkan {count} file.', $context);
+        null === $log or $log->notice('Berhasil memindahkan {count} file.', $context);
     }
 
     /**
      * Support log for rename().
      */
-    public static function rename($old, $new, $log = false)
+    public static function rename($old, $new, Log $log = null)
     {
         $result = @rename($old, $new);
-        if ($log) {
-            if ($result) {
-                Log::setNotice('Success moving file from {old} to {new}', ['old' => $old, 'new' => $new]);
-            }
-            else {
-                Log::setError('Failed moving file from {old} to {new}', ['old' => $old, 'new' => $new]);
-            }
+        if ($result) {
+            null === $log or $log->notice('Success moving file from {old} to {new}', ['old' => $old, 'new' => $new]);
+        }
+        else {
+            null === $log or $log->error('Failed moving file from {old} to {new}', ['old' => $old, 'new' => $new]);
         }
         return $result;
     }
@@ -211,7 +221,7 @@ class WorkingDirectory
      * Membuat direktori dan pastikan dapat ditulis.
      * return boolean.
      */
-    public static function prepareDirectory($dir)
+    public static function prepareDirectory($dir, Log $log = null)
     {
         try {
             // Contoh direktori yang tidak dapat ditulis pada windows 7
@@ -220,7 +230,7 @@ class WorkingDirectory
                 if (is_writable($dir)) {
                     return true;
                 }
-                else{
+                else {
                     throw new \Exception('Direktori tidak dapat ditulis.');
                 }
             }
@@ -232,17 +242,15 @@ class WorkingDirectory
                 elseif (is_file($dir)) {
                     $something = 'file';
                 }
-                $error = 'Create directory cancelled, a {something} has same name and exists.';
-                $error = Log::interpolate($error, ['something' => $something]);
+                $error = Log::interpolate('A {something} has same name and exists.', ['something' => $something]);
                 throw new \Exception($error);
             }
             // Contoh direktori yang berhasil lolos sampai baris ini
             // pada windows 7 adalah direktori C:\Users\{User}\PrintHood
             if (@mkdir($dir, self::MKDIR_MODE, self::MKDIR_RECURSIVE) === false) {
-                $error = 'Create directory failed.';
-                throw new \Exception($error);
+                throw new \Exception('Create directory failed.');
             }
-            Log::setNotice('Direktori berhasil dibuat: {dir}.', ['dir' => $dir]);
+            null === $log or $log->notice('Direktori berhasil dibuat: {dir}.', ['dir' => $dir]);
 
             // Wajib return true;
             return true;
@@ -252,7 +260,7 @@ class WorkingDirectory
                 'directory' => $dir,
                 'message' => $e->getMessage(),
             ];
-            Log::setError('Gagal menyiapkan direktori "{directory}": {message}', $context);
+            null === $log or $log->error('Gagal menyiapkan direktori "{directory}": {message}', $context);
             return false;
         }
     }

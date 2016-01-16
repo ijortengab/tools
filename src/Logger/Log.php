@@ -176,6 +176,15 @@ class Log implements LoggerInterface
     }
 
     /**
+     * Menaruh instance lain ke dalam class.
+     */
+    public static function setInstance(Log $object)
+    {
+        $my_name = static::$name;
+        self::$instances[$my_name] = $object;
+    }
+
+    /**
      * Method untuk set log ke dalam storage.
      */
     protected function storage(array $value)

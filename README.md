@@ -1,6 +1,6 @@
 IjorTengab's Tools
 ==================
-Collections of Class that don't need a standalone repository. 
+Collections of Class that don't need a standalone repository.
 The Swiss Army Knife of IjorTengab.
 
 ## List of Contents
@@ -16,4 +16,3 @@ The Swiss Army Knife of IjorTengab.
     - PropertyArrayManagerTrait
  - Timer
  - WebCrawler
- 

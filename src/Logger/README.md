@@ -4,9 +4,9 @@ Package Logger terdiri dari:
 
   - Class ```IjorTengab\Logger\Log```
 
-Requirement:  
+Requirement:
   - PHP > 5.4.0
-  
+
 ## IjorTengab\Logger\Log
 
 Class ```IjorTengab\Logger\Log``` adalah class sederhana yang
@@ -48,8 +48,9 @@ print_r($other_log->getNotice());
 
 ```
 
-Jika tidak dibuat instance, maka class ini dapat dipanggil secara static,
-nantinya akan otomatis dibuat satu instance tersembunyi di dalam class.
+Jika Class tidak dibuat instance, maka Class ini dapat dipanggil langsung
+melalui method static, nantinya akan otomatis dibuat satu instance tersembunyi
+di dalam class.
 
 ```php
 
@@ -63,8 +64,9 @@ $instance = Log::getInstance();
 
 ```
 
-Class ini dapat di-extend. Extended Class ini dapat pula dipanggil secara
-static. Storage-nya akan sama dengan parent, dan akan di merge dengan parent.
+Class ini dapat di-extend. Extended Class ini dapat pula dipanggil langsung
+melalui method static. Storage-nya akan sama dengan parent, karena memiliki
+instance yang sama.
 
 ```php
 
@@ -81,10 +83,9 @@ print_r(BaseLog::get());
 
 ```
 
-Extended class yang ingin memiliki storage terpisah dengan parent saat
-dipanggil secara static, maka perlu meng-override property $name.
-Pemisahan storage ini dimungkinkan karena ada fitur "Late Static Bindings" 
-dari PHP.
+Extended class yang ingin memiliki storage terpisah dengan parent maka perlu
+meng-override property $name. Pemisahan storage ini dimungkinkan karena ada
+fitur "Late Static Bindings" dari PHP.
 
 ```php
 
@@ -103,6 +104,21 @@ Log::setNotice('log');
 print_r(MyLog::get());
 print_r(Log::get());
 
+```
+
+Object instance yang tersembunyi di dalam Class dapat diganti dengan instance
+lain.
+
+```php
+$mylog = new Log;
+Log::setInstance($mylog);
+
+$mylog->notice('i love you');
+Log::setNotice('you love me');
+
+// Hasil output get log dibawah ini adalah sama karena storage-nya sama.
+print_r($mylog->get());
+print_r(Log::get());
 ```
 
 Method static available:

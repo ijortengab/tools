@@ -1,6 +1,6 @@
 ## IjorTengab\Timer\Timer
 
-Class Timer berguna untuk menghitung waktu. Waktu yang di-return oleh method 
+Class Timer berguna untuk menghitung waktu. Waktu yang di-return oleh method
 ```::read()``` maupun ```::remaining()```
 adalah dalam satuan milisecond.
 
