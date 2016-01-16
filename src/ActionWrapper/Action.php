@@ -1,0 +1,73 @@
+<?php
+
+namespace IjorTengab\ActionWrapper;
+
+/**
+ * Wrap classes in one place.
+ *
+ * Menyederhanakan dan menyeragamkan syntax saat mengekseskui class tertentu.
+ *
+ * Contoh penyederhanaan syntax:
+ *
+ * ```php
+ *
+ *     $result = Action::ModuleA('doSomething');
+ *
+ *     $result = Action::ModuleA('doSomething', $contextual_information);
+ *
+ *     $result = Action::ModuleB('doSomething');
+ *
+ *     $result = Action::ModuleB('doSomething', $contextual_information);
+ *
+ * ```
+ *
+ * Setiap module adalah class yang wajib mengimplementasi ModuleInterface.
+ * Class ditaruh didalam folder modules (di-copy atau dibuat sebagai symbolic
+ * link).
+ *
+ */
+class Action
+{
+
+    public static $current_module;
+
+    /**
+     * Setiap static yang dijalankan maka akan diasumsikan sebagai module.
+     *
+     * PHP Description: __callStatic() is triggered when invoking inaccessible
+     * methods in a static context.
+     */
+    public static function __callStatic($name, $arguments)
+    {
+        try {
+            if (empty(count($arguments))) {
+                Log::setError('Action has not been defined.');
+                throw new \Exception;
+            }
+            // Ambil Module dan lakukan spl_autoload_register().
+            Modules::init();
+            if (self::$current_module = Modules::getObject($name)) {
+                // Finish verify.
+                $action = array_shift($arguments);
+                $information = array_shift($arguments);
+                if (is_string($information)) {
+                    $information = trim($information);
+                    $information = json_decode($information, true);
+                }
+                $information = (array) $information;
+                self::$current_module->setAction($action);
+                foreach ($information as $key => $value) {
+                    self::$current_module->setInformation($key, $value);
+                }
+                self::$current_module->runAction();
+                // log disini
+                Log::set(self::$current_module->getLog());
+                return self::$current_module->getResult();
+            }
+        }
+        catch (\Exception $e) {
+            $a = Log::getError();
+            $debugname = 'a'; echo "\r\n<pre>" . __FILE__ . ":" . __LINE__ . "\r\n". 'var_dump(' . $debugname . '): '; var_dump($$debugname); echo "</pre>\r\n";
+        }
+    }
+}

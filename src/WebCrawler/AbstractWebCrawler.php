@@ -1,16 +1,18 @@
 <?php
+
 namespace IjorTengab\WebCrawler;
 
 use IjorTengab\ParseInfo;
 use IjorTengab\ParseHtml;
 use IjorTengab\Browser\Browser;
-use IjorTengab\Traits\FileSystemTrait;
-use IjorTengab\Traits\ObjectManagerTrait;
+use IjorTengab\FileSystem\WorkingDirectory;
+use IjorTengab\ObjectHelper\PropertyArrayManagerTrait;
+use IjorTengab\ObjectHelper\CamelCase;
 
 /**
- * 
+ *
  * IjorTengab's Web Crawler.
- * 
+ *
  * @file
  *   AbstractWebCrawler.php
  *
@@ -21,7 +23,7 @@ use IjorTengab\Traits\ObjectManagerTrait;
  *   https://github.com/ijortengab/tools
  *
  * @version
- *   0.0.3
+ *   0.0.4
  *
  * Abstract yang menyediakan pola kerja untuk crawling pada halaman web.
  * Disesuaikan dengan "behaviour" manusia saat browsing menggunakan browser.
@@ -29,9 +31,8 @@ use IjorTengab\Traits\ObjectManagerTrait;
  * Abstract ini membutuhkan
  *   - class Browser (ijortengab/browser),
  *   - class ParseHtml (ijortengab/parse-html),
- *   - class ParseInfo (ijortengab/parse-info),
- *   - trait FileSystemTrait (shipped with Browser), dan
- *   - trait ObjectManagerTrait (shipped with Browser).
+ *   - class ParseInfo (ijortengab/parse-info), 
+ *   - Todo.
  *
  * Tambahkan require berikut pada composer.json bila abstract ini digunakan
  * dalam project anda.
@@ -56,7 +57,12 @@ abstract class AbstractWebCrawler
     /**
      * Loading traits.
      */
-    use FileSystemTrait, ObjectManagerTrait;
+    use PropertyArrayManagerTrait;
+    
+    /**
+     * Current Working Directory (cwd), dibuat terpisah dengan cwd milik PHP.
+     */
+    public $cwd;
 
     /**
      * String, tujuan utama yang menjadi acuan dari setiap step yang berjalan.
@@ -83,16 +89,16 @@ abstract class AbstractWebCrawler
     protected $execute_stop = false;
 
     /**
-     * Jeda eksekusi antar satu step dengan step lainnya. Satuan dalam detik.
+     * Jeda execute antar satu step dengan step lainnya.
+     * Satuan dalam detik. Range 0~2 detik.
      */
-    public $delay = 0.35;
+    public $step_delay = 0;
 
     /**
-     * Jeda proses pada property $delay yang dibenarkan adalah diatas 0 detik
-     * dan dibawah 2 detik. Jika nilai diluar dari itu, maka nilai dari property
-     * $_delay digunakan (alias kembali ke default).
+     * Jeda request http antar satu visit dengan visit lainnya.
+     * Satuan dalam detik. Range 0~2 detik.
      */
-    private $_delay = 0.35;
+    public $visit_delay = 0.35;
 
     /**
      * Untuk keperluan debug. Jika true, maka informasi akses log dan cache
@@ -106,14 +112,15 @@ abstract class AbstractWebCrawler
     protected $html;
 
     /**
-     * Menyimpan akhir, hasil dari eksekusi.
+     * Menyimpan hasil, akhir dari eksekusi.
      */
     public $result;
 
     /**
-     * Tempat penampungan semua error yang terjadi.
+     * Property tempat menampung log yang terjadi selama proses.
+     * Hanya dua tipe log: notice dan error.
      */
-    public $error = [];
+    public $log = [];
 
     /**
      * Array tempat menampung nilai konfigurasi. Property ini akan
@@ -173,7 +180,8 @@ abstract class AbstractWebCrawler
 
     public function __construct()
     {
-        $this->chDir($this->defaultCwd());
+        // Cwd must initialize when construct.
+        $this->cwd = new WorkingDirectory($this->defaultCwd());
     }
 
     public function __destruct()
@@ -182,8 +190,6 @@ abstract class AbstractWebCrawler
         // custom configuration.
         $this->configuration('temporary', null);
         $this->configurationDump();
-        // Report error.
-        $this->reportError();
     }
 
     /**
@@ -214,7 +220,8 @@ abstract class AbstractWebCrawler
     {
         switch ($property) {
             case 'debug':
-            case 'delay':
+            case 'step_delay':
+            case 'visit_delay':
             case 'target':
                 $this->{$property} = $value;
                 break;
@@ -227,7 +234,7 @@ abstract class AbstractWebCrawler
                 $this->browser[$property] = $value;
                 break;
             case 'cwd':
-                $this->chDir($value);
+                $this->cwd->chDir($value);
                 break;
         }
         return $this;
@@ -278,8 +285,9 @@ abstract class AbstractWebCrawler
      * file configuration).
      */
     protected function configurationInit()
-    {
-        $filename = $this->setFullPath($this->configuration_custom_filename);
+    {        
+        $filename = $this->cwd->getAbsolutePath($this->configuration_custom_filename);
+        $this->cwd->addFile($this->configuration_custom_filename);
         $custom = array();
         $this->configuration_custom_file_is_exists = $file_exists = file_exists($filename);
         if ($file_exists) {
@@ -298,8 +306,8 @@ abstract class AbstractWebCrawler
      * oleh property $configuration_custom_filename;
      */
     protected function configurationDump()
-    {
-        $filename = $this->setFullPath($this->configuration_custom_filename);
+    {   
+        $filename = $this->cwd->getAbsolutePath($this->configuration_custom_filename);
         $file_exists = $this->configuration_custom_file_is_exists;
 
         if ($file_exists && empty($this->configuration_custom)) {
@@ -319,7 +327,7 @@ abstract class AbstractWebCrawler
     {
         $browser_settings = $this->browser;
         $this->browser = new Browser;
-        $this->browser->chDir($this->getCwd());
+        $this->browser->cwd->chDir($this->cwd->getCwd());
         // User Agent.
         $user_agent = $this->configuration('user_agent');
         if (empty($user_agent)) {
@@ -358,11 +366,6 @@ abstract class AbstractWebCrawler
     public function execute()
     {
         try {
-            // Cwd must initialize before Configuration.
-            if ($error = $this->cwdInit()) {
-                $this->chDir(getcwd());
-                $this->error[] = $error;
-            }
             // Configuration must initialize before Browser.
             $this->configurationInit();
             $this->browserInit();
@@ -380,23 +383,27 @@ abstract class AbstractWebCrawler
             while ($this->step = array_shift($this->steps)) {
                 // Jalankan handler.
                 $handler = [];
-                $handler[] = $priority = isset($this->step['handler']) ? $this->step['handler'] : null;
-                $handler[] = $this->underScoreToCamelCase($priority);
-                $handler[] = $alternative = isset($this->step['type']) ? $this->step['type'] : null;
-                $handler[] = $this->underScoreToCamelCase($alternative);
-                $this->executeHandler($handler);
+                // Priority from key handler, alternative from key type.
+                !isset($this->step['handler']) or $handler[] = $this->step['handler'];
+                !isset($this->step['type']) or $handler[] = $this->step['type'];              
+                $this->executeHandler($handler, true, true);
                 // Jika ada handler yang memaksa stop.
                 if ($this->execute_stop) {
                     break;
                 }
-                // Beri jeda antara 0 sampai 2 detik, atau kembalikan ke default.
-                ($this->delay >= 0 && $this->delay <= 2) or $this->delay = (float) $this->_delay;
-                $this->delay *= 1000000;
-                usleep($this->delay);
+                // Beri jeda antara 0 sampai 2 detik.
+                if ($this->step_delay > 0 && $this->step_delay <= 2) {
+                    $this->step_delay *= 1000000;
+                    usleep($this->step_delay);
+                }
             }
         }
         catch (ExecuteException $e) {
-            $this->error[] = 'ExecuteException. ' . $e->getMessage();
+            $this->log['error'][] = 'ExecuteException. ' . $e->getMessage();
+            // pe er disini.
+            $a = $this->log;
+            $debugname = 'a'; echo "\r\n<pre>" . __FILE__ . ":" . __LINE__ . "\r\n". 'var_dump(' . $debugname . '): '; var_dump($$debugname); echo "</pre>\r\n";
+            
         }
         return $this;
     }
@@ -408,12 +415,18 @@ abstract class AbstractWebCrawler
      *   Kumpulan method sebagai handler, posisi pertama akan dijalankan,
      *   jika handler tidak exists, maka akan dijalankan handler berikutnya.
      */
-    protected function executeHandler($handlers)
+    protected function executeHandler($handlers, $execute_alternative = false, $once_only = false)
     {
         $handlers = (array) $handlers;
         foreach ($handlers as $method) {
             if (method_exists($this, $method)) {
-                return call_user_func(array($this, $method));
+                call_user_func(array($this, $method));                
+            }
+            elseif ($execute_alternative && method_exists($this, CamelCase::convertFromUnderScore($method))) {
+                call_user_func(array($this, CamelCase::convertFromUnderScore($method)));
+            }
+            if ($once_only) {
+                break;
             }
         }
     }
@@ -456,7 +469,8 @@ abstract class AbstractWebCrawler
             $this->visitAfter();
 
             // Merge browser error.
-            $this->error = array_merge($this->error, $this->browser->error);
+            array_key_exists('error', $this->log) or $this->log['error'] = [];
+            $this->log['error'] = array_merge($this->log['error'], $this->browser->error);
 
             // Run context handler.
             $visit_after = $this->configuration('menu][' . $menu_name . '][visit_after');
@@ -468,9 +482,8 @@ abstract class AbstractWebCrawler
                 $this->html = new ParseHtml($this->browser->result->data);
                 $context_founded = false;
                 foreach ($visit_after as $indication => $handler) {
-                    if ($this->visitAfterIndicationOf($indication)) {
-                        $handler = [$handler, $this->underScoreToCamelCase($handler)];
-                        $this->executeHandler($handler);
+                    if ($this->visitAfterIndicationOf($indication)) {                        
+                        $this->executeHandler($handler, true);
                         $context_founded = true;
                         break;
                     }
@@ -481,23 +494,34 @@ abstract class AbstractWebCrawler
                     throw new VisitException($error);
                 }
             }
+
+            // Everything's OK, and wait for delay.
+            // Beri jeda antara 0 sampai 2 detik.
+            if ($this->visit_delay > 0 && $this->visit_delay <= 2) {
+                $this->visit_delay *= 1000000;
+                usleep($this->visit_delay);
+            }
         }
         catch (VisitException $e) {
-            $this->error[] = 'Visit canceled. ' . $e->getMessage();
+            $this->log['error'][] = 'VisitException. Result not expected. ' . $e->getMessage();
             $this->execute_stop = true;
         }
     }
 
-    protected function visitBefore()
+    protected function visitBefore() {}
+
+    protected function visitAfter() {}
+
+    protected function visitAfterIndicationOf($indication) {}
+
+    /**
+     *
+     */
+    protected function resetExecute()
     {
-    }
-
-    protected function visitAfter()
-    {
-    }
-
-    protected function visitAfterIndicationOf($indication) {
-
+        $target = $this->target;
+        $this->steps = $this->configuration('target][' . $target);
+        $this->log['notice'][] = 'Reset Execute.';
     }
 
     /**
