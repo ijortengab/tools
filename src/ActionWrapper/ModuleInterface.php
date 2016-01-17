@@ -15,7 +15,7 @@ interface ModuleInterface
     /**
      * Todo.
      */
-    public function setInformation($key, $value);
+    public function setInformation($information);
 
     /**
      * Todo.

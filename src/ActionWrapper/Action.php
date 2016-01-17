@@ -40,7 +40,7 @@ class Action
     public static function __callStatic($name, $arguments)
     {
         try {
-            if (empty(count($arguments))) {
+            if (empty($arguments)) {
                 Log::setError('Action has not been defined.');
                 throw new \Exception;
             }
@@ -50,17 +50,9 @@ class Action
                 // Finish verify.
                 $action = array_shift($arguments);
                 $information = array_shift($arguments);
-                if (is_string($information)) {
-                    $information = trim($information);
-                    $information = json_decode($information, true);
-                }
-                $information = (array) $information;
                 self::$current_module->setAction($action);
-                foreach ($information as $key => $value) {
-                    self::$current_module->setInformation($key, $value);
-                }
+                self::$current_module->setInformation($information);
                 self::$current_module->runAction();
-                // log disini
                 Log::set(self::$current_module->getLog());
                 return self::$current_module->getResult();
             }
