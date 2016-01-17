@@ -160,14 +160,11 @@ abstract class AbstractWebCrawler
 
     /**
      * Property tempat menampung object dari class Browser.
-     * Sebelum dilakukan instance, maka property ini bernilai array
-     * untuk options bagi object tersebut.
      *
      * @see
-     *   self::set()
-     *   self::browserInit()
+     *   ::browserInit()
      */
-    protected $browser = [];
+    protected $browser;
 
     /**
      * Child class must declare own configuration.
@@ -185,7 +182,9 @@ abstract class AbstractWebCrawler
         $this->log = new Log;
 
         // Cwd must initialize when construct.
-        $this->cwd = new WorkingDirectory($this->defaultCwd());
+        $this->cwd = new WorkingDirectory($this->defaultCwd(), $this->log);
+
+        $this->configurationInit();
     }
 
     public function __destruct()
@@ -232,10 +231,11 @@ abstract class AbstractWebCrawler
             case 'configuration':
                 $this->configuration_custom_filename = $value;
                 break;
-            case 'cookie':
-            case 'history':
-            case 'cache':
-                $this->browser[$property] = $value;
+            case 'browser_cookie':
+            case 'browser_history':
+            case 'browser_cache':
+            case 'browser_cwd':
+                $this->configuration('temporary][browser][' . $property, $value);
                 break;
             case 'cwd':
                 $this->cwd->chDir($value);
@@ -318,9 +318,12 @@ abstract class AbstractWebCrawler
             // Todo, gunakan try and catch.
             @unlink($filename);
         }
+
         if($this->configuration_custom_file_has_changed) {
-            $contents = ParseInfo::encode($this->configuration_custom);
-            file_put_contents($filename, $contents);
+            if (!empty($this->configuration_custom)) {
+                $contents = ParseInfo::encode($this->configuration_custom);
+                file_put_contents($filename, $contents);
+            }
         }
     }
 
@@ -329,9 +332,19 @@ abstract class AbstractWebCrawler
      */
     protected function browserInit()
     {
-        $browser_settings = $this->browser;
+        $settings = $this->configuration('temporary][browser');
+
+        if (!empty($settings['browser_cwd'])) {
+            $browser_cwd = $this->cwd->getAbsolutePath($settings['browser_cwd']);
+            $cwd = new WorkingDirectory($browser_cwd, $this->log);
+        }
+        else {
+            $cwd = $this->cwd;
+        }
+
         $this->browser = new Browser(null, $this->log);
-        $this->browser->cwd->chDir($this->cwd->getCwd());
+        $this->browser->setCwd($cwd);
+
         // User Agent.
         $user_agent = $this->configuration('user_agent');
         if (empty($user_agent)) {
@@ -346,14 +359,14 @@ abstract class AbstractWebCrawler
             ->options('user_agent', $user_agent)
         ;
         // Other Settings.
-        if (isset($browser_settings['cookie']) && !empty($browser_settings['cookie'])) {
-            $this->browser->cookie_filename = $browser_settings['cookie'];
+        if (!empty($settings['browser_cookie'])) {
+            $this->browser->cookie_filename = $settings['browser_cookie'];
         }
-        if (isset($browser_settings['history']) && !empty($browser_settings['history'])) {
-            $this->browser->history_filename = $browser_settings['history'];
+        if (!empty($settings['browser_history'])) {
+            $this->browser->history_filename = $settings['browser_history'];
         }
-        if (isset($browser_settings['cache']) && !empty($browser_settings['cache'])) {
-            $this->browser->_cache_filename = $browser_settings['cache'];
+        if (!empty($settings['browser_cache'])) {
+            $this->browser->_cache_filename = $settings['browser_cache'];
         }
         // If debug true.
         if ($this->debug) {
@@ -370,9 +383,6 @@ abstract class AbstractWebCrawler
     public function execute()
     {
         try {
-            // Configuration must initialize before Browser.
-            $this->configurationInit();
-            $this->browserInit();
             $target = $this->target;
             if (empty($target)) {
                 $this->log->error('Target has not been defined.');
@@ -440,6 +450,9 @@ abstract class AbstractWebCrawler
     protected function visit()
     {
         try {
+            if (null === $this->browser) {
+                $this->browserInit();
+            }
             // Prepare.
             $menu_name = isset($this->step['menu']) ? $this->step['menu'] : null;
             if (empty($menu_name)) {
@@ -526,8 +539,5 @@ abstract class AbstractWebCrawler
      * Todo.
      */
     protected function reportError()
-    {
-       // $error = $this->error;
-       // $debugname = 'error'; echo "\r\n<pre>" . __FILE__ . ":" . __LINE__ . "\r\n". 'var_dump(' . $debugname . '): '; var_dump($$debugname); echo "</pre>\r\n";
-    }
+    {}
 }
