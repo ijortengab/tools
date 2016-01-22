@@ -250,7 +250,7 @@ abstract class AbstractWebCrawler
     protected function addStep($position, $steps)
     {
         switch ($position) {
-            case 'prepand':
+            case 'prepend':
                 $this->steps = array_merge($steps, $this->steps);
                 break;
 
@@ -397,6 +397,7 @@ abstract class AbstractWebCrawler
 
             // Run.
             while ($this->step = array_shift($this->steps)) {
+                
                 // Jalankan handler.
                 $handler = [];
                 // Priority from key handler, alternative from key type.
@@ -414,8 +415,8 @@ abstract class AbstractWebCrawler
                 }
             }
         }
-        catch (ExecuteException $e) {
-            $this->log->error('ExecuteException.');
+        catch (ExecuteException $e) { 
+            $this->log->error('ExecuteException. Execution is stopped.');
         }
         return $this;
     }
@@ -456,11 +457,13 @@ abstract class AbstractWebCrawler
             // Prepare.
             $menu_name = isset($this->step['menu']) ? $this->step['menu'] : null;
             if (empty($menu_name)) {
-                throw new VisitException('Menu information in "Step Definition" has not been defined.');
+                $this->log->error('Menu information in "Step Definition" has not been defined.');
+                throw new VisitException;
             }
             $url = $this->configuration('menu][' . $menu_name . '][url');
             if (empty($url)) {
-                throw new VisitException('URL information for menu "' . $menu_name . '" has not been defined.');
+                $this->log->error('URL information for menu "{menu}" has not been defined.', ['menu' => $menu_name]);
+                throw new VisitException;
             }
             // Reset browser and set new URL.
             $this->browser->reset()->setUrl($url);
@@ -483,9 +486,9 @@ abstract class AbstractWebCrawler
             $this->browser->execute();
             $this->visitAfter();
 
-            // Run context handler.
-            $visit_after = $this->configuration('menu][' . $menu_name . '][visit_after');
-            if (!empty($visit_after)) {
+            // Run Verify.            
+            $verify = $this->configuration('menu][' . $menu_name . '][verify');
+            if (!empty($this->step['must_verify']) && !empty($verify)) {
                 if (empty($this->browser->result->data)) {
                     $this->log->error('Empty html data.');
                     throw new VisitException;
@@ -493,8 +496,8 @@ abstract class AbstractWebCrawler
                 // Use ParseHtml.
                 $this->html = new ParseHtml($this->browser->result->data);
                 $context_founded = false;
-                foreach ($visit_after as $indication => $handler) {
-                    if ($this->visitAfterIndicationOf($indication)) {
+                foreach ($verify as $indication_name => $handler) {
+                    if ($this->checkIndication($indication_name)) {
                         $this->executeHandler($handler, true);
                         $context_founded = true;
                         break;
@@ -514,7 +517,7 @@ abstract class AbstractWebCrawler
             }
         }
         catch (VisitException $e) {
-            $this->log->error('VisitException. Result not expected.');
+            $this->log->error('VisitException. Result not expected. Execution is stopped.');
             $this->execute_stop = true;
         }
     }
@@ -523,7 +526,7 @@ abstract class AbstractWebCrawler
 
     protected function visitAfter() {}
 
-    protected function visitAfterIndicationOf($indication) {}
+    protected function checkIndication($indication_name) {}
 
     /**
      *
@@ -538,6 +541,5 @@ abstract class AbstractWebCrawler
     /**
      * Todo.
      */
-    protected function reportError()
-    {}
+    protected function reportError() {}
 }
