@@ -91,13 +91,13 @@ abstract class AbstractWebCrawler
 
     /**
      * Jeda execute antar satu step dengan step lainnya.
-     * Satuan dalam detik. Range 0~2 detik.
+     * Satuan dalam detik. Range 0~2 detik. Float.
      */
     public $step_delay = 0;
 
     /**
      * Jeda request http antar satu visit dengan visit lainnya.
-     * Satuan dalam detik. Range 0~2 detik.
+     * Satuan dalam detik. Range 0~2 detik. Float.
      */
     public $visit_delay = 0.35;
 
@@ -393,11 +393,13 @@ abstract class AbstractWebCrawler
                 $this->log->error('Steps definition for target {target} has not been defined.', ['target' => $target]);
                 throw new ExecuteException;
             }
+
             $this->steps = $steps;
 
+            $this->executeBefore();
             // Run.
             while ($this->step = array_shift($this->steps)) {
-                
+
                 // Jalankan handler.
                 $handler = [];
                 // Priority from key handler, alternative from key type.
@@ -414,12 +416,18 @@ abstract class AbstractWebCrawler
                     usleep($this->step_delay);
                 }
             }
+            $this->executeAfter();
         }
-        catch (ExecuteException $e) { 
+        catch (ExecuteException $e) {
             $this->log->error('ExecuteException. Execution is stopped.');
         }
+
         return $this;
     }
+
+    protected function executeBefore() {}
+
+    protected function executeAfter() {}
 
     /**
      * Menjalankan handler (method) jika exists.
@@ -486,7 +494,7 @@ abstract class AbstractWebCrawler
             $this->browser->execute();
             $this->visitAfter();
 
-            // Run Verify.            
+            // Run Verify.
             $verify = $this->configuration('menu][' . $menu_name . '][verify');
             if (!empty($this->step['must_verify']) && !empty($verify)) {
                 if (empty($this->browser->result->data)) {
@@ -526,6 +534,9 @@ abstract class AbstractWebCrawler
 
     protected function visitAfter() {}
 
+    /**
+     *
+     */
     protected function checkIndication($indication_name) {}
 
     /**
@@ -533,10 +544,16 @@ abstract class AbstractWebCrawler
      */
     protected function resetExecute()
     {
+        $this->resetExecuteBefore();
         $target = $this->target;
         $this->steps = $this->configuration('target][' . $target);
         $this->log->notice('Reset Execute.');
+        $this->resetExecuteAfter();
     }
+
+    protected function resetExecuteBefore() {}
+
+    protected function resetExecuteAfter() {}
 
     /**
      * Todo.
