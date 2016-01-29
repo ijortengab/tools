@@ -170,9 +170,36 @@ class Range
     /**
      *
      */
-    public function isSameMonth()
+    public function isSameMonth(\DateTime $time = null, $which = null)
     {
-        return $this->start->format('Y-m') == $this->end->format('Y-m');
+        // return $this->start->format('Y-m') == $this->end->format('Y-m');
+        if (null === $time && null === $which) {
+            return $this->start->format('Y-m') == $this->end->format('Y-m');
+        }
+        if (null !== $time && null !== $which) {
+            if (property_exists($this, $which) && $this->{$which} instanceOf \DateTime) {
+                return $time->format('Y-m') == $this->{$which}->format('Y-m');
+            }
+        }
+        // Tidak boleh return false, jika argument tidak valid.
+        throw new \InvalidArgumentException;
+    }
+
+    /**
+     * Todo.
+     */
+    public function isSameDay(\DateTime $time = null, $which = null)
+    {
+        if (null === $time && null === $which) {
+            return $this->start->format('Y-m-d') == $this->end->format('Y-m-d');
+        }
+        if (null !== $time && null !== $which) {
+            if (property_exists($this, $which) && $this->{$which} instanceOf \DateTime) {
+                return $time->format('Y-m-d') == $this->{$which}->format('Y-m-d');
+            }
+        }
+        // Tidak boleh return false, jika argument tidak valid.
+        throw new \InvalidArgumentException;
     }
 
     /**
