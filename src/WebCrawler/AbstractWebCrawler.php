@@ -3,7 +3,7 @@
 namespace IjorTengab\WebCrawler;
 
 use IjorTengab\ParseInfo;
-use IjorTengab\ParseHtml;
+use IjorTengab\ParseHTMLAdvanced;
 use IjorTengab\Browser\Browser;
 use IjorTengab\FileSystem\WorkingDirectory;
 use IjorTengab\ObjectHelper\PropertyArrayManagerTrait;
@@ -233,7 +233,7 @@ abstract class AbstractWebCrawler
                 break;
             case 'browser_cookie':
             case 'browser_history':
-            case 'browser_cache':
+            case 'browser_response_body':
             case 'browser_cwd':
                 $this->configuration('temporary][browser][' . $property, $value);
                 break;
@@ -365,14 +365,14 @@ abstract class AbstractWebCrawler
         if (!empty($settings['browser_history'])) {
             $this->browser->history_filename = $settings['browser_history'];
         }
-        if (!empty($settings['browser_cache'])) {
-            $this->browser->_cache_filename = $settings['browser_cache'];
+        if (!empty($settings['browser_response_body'])) {
+            $this->browser->_response_body_filename = $settings['browser_response_body'];
         }
         // If debug true.
         if ($this->debug) {
             $this->browser
                 ->options('history_save', true)
-                ->options('cache_save', true)
+                ->options('response_body_save', true)
             ;
         }
     }
@@ -405,6 +405,7 @@ abstract class AbstractWebCrawler
                 // Priority from key handler, alternative from key type.
                 !isset($this->step['handler']) or $handler[] = $this->step['handler'];
                 !isset($this->step['type']) or $handler[] = $this->step['type'];
+                // Jalankan hanya sekali saja, beri true pada argument ketiga.
                 $this->executeHandler($handler, true, true);
                 // Jika ada handler yang memaksa stop.
                 if ($this->execute_stop) {
@@ -419,7 +420,7 @@ abstract class AbstractWebCrawler
             $this->executeAfter();
         }
         catch (ExecuteException $e) {
-            $this->log->error('ExecuteException. Execution is stopped.');
+            $this->log->notice('ExecuteException. Execution is stopped.');
         }
 
         return $this;
@@ -439,14 +440,17 @@ abstract class AbstractWebCrawler
     protected function executeHandler($handlers, $execute_alternative = false, $once_only = false)
     {
         $handlers = (array) $handlers;
+        $run = false;
         foreach ($handlers as $method) {
             if (method_exists($this, $method)) {
+                $run = true;
                 call_user_func(array($this, $method));
             }
             elseif ($execute_alternative && method_exists($this, CamelCase::convertFromUnderScore($method))) {
+                $run = true;
                 call_user_func(array($this, CamelCase::convertFromUnderScore($method)));
             }
-            if ($once_only) {
+            if ($once_only && $run) {
                 break;
             }
         }
@@ -502,7 +506,7 @@ abstract class AbstractWebCrawler
                     throw new VisitException;
                 }
                 // Use ParseHtml.
-                $this->html = new ParseHtml($this->browser->result->data);
+                $this->html = new ParseHTMLAdvanced($this->browser->result->data);
                 $context_founded = false;
                 foreach ($verify as $indication_name => $handler) {
                     if ($this->checkIndication($indication_name)) {

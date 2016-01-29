@@ -3,6 +3,7 @@
 namespace IjorTengab\FileSystem;
 
 use IjorTengab\Logger\Log;
+use Psr\Log\LoggerInterface;
 
 /**
  * Menjadikan CWD (Current Working Directory) sebagai sebuah object.
@@ -16,7 +17,7 @@ class WorkingDirectory
 
     public $log;
 
-    public function __construct($dir = null, Log $log = null)
+    public function __construct($dir = null, LoggerInterface $log = null)
     {
         // Init log.
         if (null === $log) {
