@@ -108,7 +108,7 @@ abstract class AbstractWebCrawler
     public $debug = true;
 
     /**
-     * Property tempat menampung object dari class ParseHtml.
+     * Property tempat menampung object dari class ParseHtmlAdvanced.
      */
     protected $html;
 
@@ -185,6 +185,8 @@ abstract class AbstractWebCrawler
         $this->cwd = new WorkingDirectory($this->defaultCwd(), $this->log);
 
         $this->configurationInit();
+
+        $this->init();
     }
 
     public function __destruct()
@@ -194,6 +196,10 @@ abstract class AbstractWebCrawler
         $this->configuration('temporary', null);
         $this->configurationDump();
     }
+
+    // Init berjalan setelah default configuration berhasil masuk ke property.
+    // Gunakaan ini untuk menambah/mengubah configurasi awal.
+    protected function init() {}
 
     /**
      * Set property information in object.
