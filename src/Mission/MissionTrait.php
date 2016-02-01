@@ -1,6 +1,6 @@
 <?php
 
-namespace IjorTengab\WebCrawler;
+namespace IjorTengab\Mission;
 
 /**
  * Trait yang menyajikan cara cepat menggunakan Web Crawler berdasarkan
@@ -23,7 +23,7 @@ namespace IjorTengab\WebCrawler;
  *     $log = $instance->log;
  * ```
  */
-trait WebCrawlerTrait
+trait MissionTrait
 {
     /**
      * Create a new instance of object.

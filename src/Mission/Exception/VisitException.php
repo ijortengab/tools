@@ -1,6 +1,6 @@
 <?php
 
-namespace IjorTengab\WebCrawler;
+namespace IjorTengab\Mission\Exception;
 
 /**
  * The request exception implements in request method.
