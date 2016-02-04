@@ -176,12 +176,12 @@ abstract class AbstractMission
     {
         switch ($position) {
             case 'prepend':
-                $this->log->notice('Sebanyak {c} step ditambahkan prepend.', ['c' => count($steps)]);
+                $this->log->debug('Sebanyak {c} step ditambahkan prepend.', ['c' => count($steps)]);
                 $this->steps = array_merge($steps, $this->steps);
                 break;
 
             case 'append':
-                $this->log->notice('Sebanyak {c} step ditambahkan append.', ['c' => count($steps)]);
+                $this->log->debug('Sebanyak {c} step ditambahkan append.', ['c' => count($steps)]);
                 $this->steps = array_merge($this->steps, $steps);
                 break;
 
@@ -199,6 +199,7 @@ abstract class AbstractMission
             $this->log->error('Reference {name} tidak valid', ['name' => $reference_name]);
             throw new ExecuteException;
         }
+        $this->log->debug('Menambah step dari reference {name}', ['name' => $reference_name]);
         $this->addStep($ref['position'], $ref['steps']);
     }
 
@@ -291,6 +292,7 @@ abstract class AbstractMission
             $this->executeBefore();
             // Run.
             while ($this->step = array_shift($this->steps)) {
+                $this->log->debug('Satu step berjalan, tersisa {c} step.', ['c' => count($this->steps)]);
                 // Jika handler_before ingin menghentikan proses current step,
                 // maka caranya throw ke StepException.
                 // Jika handler ingin menghentikan keseluruhan proses,
@@ -309,19 +311,23 @@ abstract class AbstractMission
                     }
                 }
                 catch (StepException $e) {
-                    $this->log->notice('StepException. Current Step process is skipped.');
+                    $this->log->debug('StepException. Proses step saat ini dilewati.');
                 }
             }
             $this->executeAfter();
         }
         catch (ExecuteException $e) {
-            $this->log->notice('ExecuteException. Execution is stopped.');
+            $this->log->debug('ExecuteException. Execution is stopped.');
         }
 
         return $this;
     }
 
-    protected function executeBefore() {}
+    protected function executeBefore()
+    {
+        $this->log->debug('Menjalankan misi dengan target {name}.', ['name' => $this->target]);
+        $this->log->debug('Misi terdapat {count} step.', ['count' => count($this->steps)]);
+    }
 
     protected function executeAfter() {}
 
@@ -351,10 +357,10 @@ abstract class AbstractMission
         $handlers = (array) $handlers;
         foreach ($handlers as $method) {
             if (method_exists($this, $method)) {
-                call_user_func(array($this, $method));
+                call_user_func(array($this, '_' . $method));
             }
             elseif ($execute_alternative && method_exists($this, CamelCase::convertFromUnderScore($method))) {
-                call_user_func(array($this, CamelCase::convertFromUnderScore($method)));
+                call_user_func(array($this, '_' . CamelCase::convertFromUnderScore($method)));
             }
         }
     }
@@ -367,11 +373,19 @@ abstract class AbstractMission
         $this->resetExecuteBefore();
         $target = $this->target;
         $this->steps = $this->configuration('target][' . $target);
-        $this->log->notice('Reset Execute.');
+        $this->log->debug('Reset dilakukan.');
+        $this->log->debug('Misi kini terdapat {count} step seperti semula.', ['count' => count($this->steps)]);
         $this->resetExecuteAfter();
     }
 
     protected function resetExecuteBefore() {}
 
     protected function resetExecuteAfter() {}
+
+    public function __call($name, $arguments)
+    {
+        $real_method = substr($name, 1);
+        $this->log->debug('Menjalankan method ::{name}.', ['name' => $real_method]);
+        return $this->$real_method();
+    }
 }

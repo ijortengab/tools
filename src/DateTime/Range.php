@@ -181,7 +181,7 @@ class Range
                 return $time->format('Y-m') == $this->{$which}->format('Y-m');
             }
         }
-        // Tidak boleh return false, jika argument tidak valid.
+        // Tidak boleh return false atau null, jika argument tidak valid.
         throw new \InvalidArgumentException;
     }
 
@@ -246,7 +246,7 @@ class Range
      * argument harus sbb: 2015-01 atau 2015-1 atau 20151 atau 201501
      * return pasti 2015-01
      */
-    protected function getNextMonth($string)
+    public static function getNextMonth($string)
     {
         if (preg_match('/^(\d+)\-(\d{1,2})$/', $string, $m)) {
             $year = (int) $m[1];
@@ -257,6 +257,26 @@ class Range
             if (++$month == 13) {
                 $month = 1;
                 $year++;
+            }
+            return $year . '-' . str_pad($month, 2, 0, STR_PAD_LEFT);
+        }
+    }
+
+    /**
+     * argument harus sbb: 2015-01 atau 2015-1 atau 20151 atau 201501
+     * return pasti 2015-01
+     */
+    public static function getPrevMonth($string)
+    {
+        if (preg_match('/^(\d+)\-(\d{1,2})$/', $string, $m)) {
+            $year = (int) $m[1];
+            $month = (int) $m[2];
+            if ($month > 12) {
+                return false;
+            }
+            if (--$month == 0) {
+                $month = 12;
+                $year--;
             }
             return $year . '-' . str_pad($month, 2, 0, STR_PAD_LEFT);
         }

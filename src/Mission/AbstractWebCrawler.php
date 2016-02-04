@@ -123,7 +123,8 @@ abstract class AbstractWebCrawler extends AbstractMission
             // Execute.
             $this->visitBefore();
             $this->browser->execute();
-            $this->log->notice('Mengunjungi menu {name}', ['name' => $menu_name]);
+            $this->log->debug('Mengunjungi menu {name} ({time} detik).', ['name' => $menu_name, 'time' => $this->browser->timer->read()]);
+            $this->configuration('last_visit', date('c'));
             $this->visitAfter();
 
             // Everything's OK, and wait for delay.
@@ -134,7 +135,7 @@ abstract class AbstractWebCrawler extends AbstractMission
             }
         }
         catch (VisitException $e) {
-            $this->log->notice('VisitException. Result not expected.');
+            $this->log->debug('VisitException. Result not expected.');
             // Paksa stop.
             throw new ExecuteException;
         }
@@ -221,6 +222,7 @@ abstract class AbstractWebCrawler extends AbstractMission
         $context_founded = false;
         foreach ($verify as $indication_name => $handler) {
             if ($this->checkIndication($indication_name)) {
+                $this->log->debug('Indikasi {name} ditemukan.', ['name' => $indication_name]);
                 $this->runMethod($handler, true);
                 $context_founded = true;
                 break;
