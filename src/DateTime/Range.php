@@ -281,4 +281,12 @@ class Range
             return $year . '-' . str_pad($month, 2, 0, STR_PAD_LEFT);
         }
     }
+
+    /**
+     *
+     */
+    public function isBetween(\DateTime $date)
+    {
+        return ($this->start < $date && $this->end > $date);
+    }
 }
