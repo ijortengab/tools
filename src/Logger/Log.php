@@ -13,6 +13,11 @@ use Psr\Log\InvalidArgumentException;
 class Log implements LoggerInterface
 {
     /**
+     * Load eight method from LoggerTrait.
+     */
+    use LoggerTrait;
+
+    /**
      * Nama class ini dan akan menjadi indikator untuk membuat instance
      * jika Class ini dipanggil secara static untuk set/get log.
      */
@@ -27,11 +32,6 @@ class Log implements LoggerInterface
      * Property tempat penyimpanan log.
      */
     protected $storage = [];
-
-    /**
-     * Load eight method from LoggerTrait.
-     */
-    use LoggerTrait;
 
     /**
      * Implements of LoggerInterface::log().
@@ -72,7 +72,14 @@ class Log implements LoggerInterface
             if (strpos($name, 'get') === 0) {
                 $name = str_replace('get', '', $name);
                 if ($name == '') {
-                    return $this->storage;
+                    // Sesuaikan urutan level.
+                    $ref = array_flip($this->checkLevel());
+                    $storage = $this->storage;
+                    array_walk($ref, function(&$value, $key, $storage) {
+                        $value = isset($storage[$key]) ? $storage[$key] : false;
+                    }, $storage);
+                    $log = array_filter($ref);
+                    return $log;
                 }
                 $name = strtolower($name);
                 if (!self::checkLevel($name)) {
@@ -115,7 +122,14 @@ class Log implements LoggerInterface
             if (strpos($name, 'get') === 0) {
                 $name = str_replace('get', '', $name);
                 if ($name == '') {
-                    return self::getInstance()->storage;
+                    // Sesuaikan urutan level.
+                    $ref = array_flip(self::checkLevel());
+                    $storage = self::getInstance()->storage;
+                    array_walk($ref, function(&$value, $key, $storage) {
+                        $value = isset($storage[$key]) ? $storage[$key] : false;
+                    }, $storage);
+                    $log = array_filter($ref);
+                    return $log;
                 }
                 $name = strtolower($name);
                 if (!self::checkLevel($name)) {
@@ -148,8 +162,20 @@ class Log implements LoggerInterface
     /**
      * Return log level approval from PSR.
      */
-    protected static function checkLevel($level)
+    public static function checkLevel($level = null)
     {
+        if (null === $level) {
+            return [
+                LogLevel::EMERGENCY,
+                LogLevel::ALERT,
+                LogLevel::CRITICAL,
+                LogLevel::ERROR,
+                LogLevel::WARNING,
+                LogLevel::NOTICE,
+                LogLevel::INFO,
+                LogLevel::DEBUG,
+            ];
+        }
         switch ($level) {
             case LogLevel::EMERGENCY:
             case LogLevel::ALERT:

@@ -17,6 +17,8 @@ class WorkingDirectory
 
     public $log;
 
+    protected $files;
+
     public function __construct($dir = null, LoggerInterface $log = null)
     {
         // Init log.
@@ -28,7 +30,8 @@ class WorkingDirectory
         }
 
         if (null !== $dir) {
-            return $this->chDir($dir);
+            // Saat baru dibuat kita tidak perlu autocreate.
+            return $this->chDir($dir, false);
         }
         $this->working_directory = getcwd();
     }
@@ -107,7 +110,7 @@ class WorkingDirectory
      * yakni, fungsi chdir() otomatis mengubah path menjadi
      * realpath(), semantara method ini tidak.
      */
-    public function chDir($dir)
+    public function chDir($dir, $autocreate = true)
     {
         try {
             $_ = DIRECTORY_SEPARATOR;
@@ -120,7 +123,7 @@ class WorkingDirectory
             if ($this->isRelativePath($dir)) {
                 $dir = $cwd . $_ . $dir;
             }
-            if ($this->prepareDirectory($dir, $this->log) === false) {
+            if ($autocreate && $this->prepareDirectory($dir, $this->log) === false) {
                 throw new \Exception;
             }
             // Finish.
@@ -141,17 +144,17 @@ class WorkingDirectory
 
     public function getRegisteredFiles()
     {
-        return $this->register();
+        return $this->files;
     }
     /**
      *
      */
     protected function moveRegisteredFiles($old, $new)
     {
-        $register = $this->register();
-        if (!empty($register)) {
+        $files = $this->files;
+        if (!empty($files)) {
             $move_files = [];
-            foreach ($register as $file) {
+            foreach ($files as $file) {
                 if (file_exists($old . DIRECTORY_SEPARATOR . $file)) {
                     $move_files[] = $file;
                 }
@@ -167,11 +170,7 @@ class WorkingDirectory
      */
     protected function register($filename = null)
     {
-        static $register = [];
-        if (null === $filename) {
-            return $register;
-        }
-        $register[] = $filename;
+        $this->files[] = $filename;
     }
 
     /**

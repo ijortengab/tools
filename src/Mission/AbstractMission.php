@@ -3,6 +3,7 @@
 namespace IjorTengab\Mission;
 
 use IjorTengab\ParseInfo;
+use IjorTengab\DateTime\Timer;
 use IjorTengab\FileSystem\WorkingDirectory;
 use IjorTengab\ObjectHelper\PropertyArrayManagerTrait;
 use IjorTengab\ObjectHelper\CamelCase;
@@ -39,6 +40,11 @@ abstract class AbstractMission
     protected $steps;
 
     /**
+     * Menghitung eksekusi step aktual.
+     */
+    protected $step_count = 0;
+
+    /**
      * Jeda execute antar satu step dengan step lainnya.
      * Satuan dalam detik. Range 0~2 detik. Float.
      */
@@ -51,9 +57,13 @@ abstract class AbstractMission
 
     /**
      * Property tempat menampung log yang terjadi selama proses.
-     * Hanya dua tipe log: notice dan error.
      */
     public $log;
+
+    /**
+     * Property tempat menampung waktu yang terjadi selama proses.
+     */
+    public $timer;
 
     /**
      * Array tempat menampung nilai konfigurasi. Property ini akan
@@ -110,9 +120,7 @@ abstract class AbstractMission
 
         // Cwd must initialize when construct.
         $this->cwd = new WorkingDirectory($this->defaultCwd(), $this->log);
-
         $this->configurationInit();
-
         $this->init();
     }
 
@@ -188,7 +196,6 @@ abstract class AbstractMission
             default:
                 $this->log->error('Position {name} tidak valid', ['name' => $position]);
                 throw new ExecuteException;
-                break;
         }
     }
 
@@ -233,16 +240,8 @@ abstract class AbstractMission
      */
     protected function configurationInit()
     {
-        $filename = $this->cwd->getAbsolutePath($this->configuration_custom_filename);
         $this->cwd->addFile($this->configuration_custom_filename);
-        $custom = array();
-        $this->configuration_custom_file_is_exists = $file_exists = file_exists($filename);
-        if ($file_exists) {
-            $custom = ParseInfo::decode(file_get_contents($filename));
-            $this->configuration_custom = $custom;
-        }
-        $default = $this->defaultConfiguration();
-        $this->configuration = array_replace_recursive($default, $custom);
+        $this->configuration = $this->defaultConfiguration();
     }
 
     /**
@@ -273,8 +272,23 @@ abstract class AbstractMission
     /**
      * Main function.
      */
-    public function execute()
+    public function execute($override_configuration = true)
     {
+        if (null === $this->timer) {
+            $this->timer = new Timer;
+            $this->log->debug('Misi dimulai pada {t}', ['t' => date('c')]);
+        }
+
+        if ($override_configuration) {
+            $filename = $this->cwd->getAbsolutePath($this->configuration_custom_filename);
+            $this->configuration_custom_file_is_exists = $file_exists = file_exists($filename);
+            if ($file_exists) {
+                $custom = (array) ParseInfo::decode(file_get_contents($filename));
+                $this->configuration_custom = $custom;
+                $this->configuration = array_replace_recursive($this->configuration, $custom);
+            }
+        }
+
         try {
             $target = $this->target;
             if (empty($target)) {
@@ -293,6 +307,7 @@ abstract class AbstractMission
             // Run.
             while ($this->step = array_shift($this->steps)) {
                 $this->log->debug('Satu step berjalan, tersisa {c} step.', ['c' => count($this->steps)]);
+                $this->step_count++;
                 // Jika handler_before ingin menghentikan proses current step,
                 // maka caranya throw ke StepException.
                 // Jika handler ingin menghentikan keseluruhan proses,
@@ -320,6 +335,11 @@ abstract class AbstractMission
             $this->log->debug('ExecuteException. Execution is stopped.');
         }
 
+        if (null !== $this->timer) {
+            $this->log->debug('Misi selesai. Total {c} step. Waktu proses: {t} detik.', ['c' => $this->step_count, 't' => $this->timer->read()]);
+            // Hapus, agar tidak double jika user menggunakan ::changeTarget().
+            $this->timer = null;
+        }
         return $this;
     }
 
@@ -382,6 +402,17 @@ abstract class AbstractMission
 
     protected function resetExecuteAfter() {}
 
+    protected function changeTarget($new_target)
+    {
+        // Cegah unlimited looping.
+        if ($new_target == $this->target) {
+            $this->log->error('Gagal mengganti target.');
+            throw new ExecuteException;
+        }
+        $this->log->debug('Target diganti dari {old} ke {new}', ['old' => $this->target, 'new' => $new_target]);
+        $this->target = $new_target;
+        $this->execute(false);
+    }
     public function __call($name, $arguments)
     {
         $real_method = substr($name, 1);
