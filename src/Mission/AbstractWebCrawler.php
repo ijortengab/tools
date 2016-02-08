@@ -105,12 +105,11 @@ abstract class AbstractWebCrawler extends AbstractMission
             // Reset browser and set new URL.
             $this->browser->reset()->setUrl($url);
 
-            // Set referer and save for next browsing.
+            // Set referer.
             $referer = $this->configuration('referer');
             if (!empty($referer)) {
                 $this->browser->headers('Referer', $referer);
             }
-            $this->configuration('referer', $url);
 
             // Play with post request.
             $fields = (array) $this->configuration("menu][$menu_name][fields");
@@ -125,6 +124,9 @@ abstract class AbstractWebCrawler extends AbstractMission
             $this->browser->execute();
             $this->log->debug('Mengunjungi menu {name} ({time} detik).', ['name' => $menu_name, 'time' => $this->browser->timer->read()]);
             $this->configuration('last_visit', date('c'));
+            // Simpan referer untuk next browsing, gunakan ::getUrl alih-alih
+            // $url karena ada kemungkinan terjadi redirect.
+            $this->configuration('referer', $this->browser->getUrl($url));
             $this->visitAfter();
 
             // Everything's OK, and wait for delay.
