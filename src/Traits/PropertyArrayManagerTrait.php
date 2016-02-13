@@ -1,6 +1,6 @@
 <?php
 
-namespace IjorTengab\ObjectHelper;
+namespace IjorTengab\Tools\Traits;
 
 trait PropertyArrayManagerTrait
 {

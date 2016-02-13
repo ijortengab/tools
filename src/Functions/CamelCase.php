@@ -1,10 +1,9 @@
 <?php
 
-namespace IjorTengab\ObjectHelper;
+namespace IjorTengab\Tools\Functions;
 
 class CamelCase
 {
-
     /**
      * Mengubah string dari request_home_page_authenticated, menjadi
      * requestHomePageAuthenticated yang menjadi standard penamaan

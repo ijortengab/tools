@@ -1,6 +1,6 @@
 <?php
 
-namespace IjorTengab\FileSystem;
+namespace IjorTengab\Tools\Functions;
 
 class FileName
 {

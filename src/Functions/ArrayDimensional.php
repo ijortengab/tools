@@ -1,6 +1,6 @@
 <?php
 
-namespace IjorTengab\ObjectHelper;
+namespace IjorTengab\Tools\Functions;
 
 class ArrayDimensional
 {
