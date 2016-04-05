@@ -74,10 +74,34 @@ class ArrayDimensional
     }
 
     /**
-     * Todo.
+     * Membuat nested array, code bersumber dari drupal 7 pada fungsi
+     * drupal_parse_info_format().
      */
-    public static function expand()
+    public static function expand($array_simple)
     {
-
+        $info = [];
+        foreach ($array_simple as $key => $value) {
+            $keys = preg_split('/\]?\[/', rtrim($key, ']'));
+            $last = array_pop($keys);
+            $parent = &$info;
+            // Create nested arrays.
+            foreach ($keys as $key) {
+                if ($key == '') {
+                    $key = count($parent);
+                }
+                if (!isset($parent[$key]) || !is_array($parent[$key])) {
+                    $parent[$key] = array();
+                }
+                $parent = &$parent[$key];
+            }
+            // Insert actual value.
+            if ($last == '') {
+                $last = count($parent);
+            }
+            // Update hack start
+            $parent[$last] = $value;
+            // Update hack finish
+        }
+        return $info;
     }
 }

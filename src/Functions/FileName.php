@@ -12,7 +12,7 @@ class FileName
      * @link
      *   https://api.drupal.org/api/function/file_create_filename/7
      */
-    public static function createUnique($basename, $directory)
+    public static function uniquify($basename, $directory)
     {
         // Strip control characters (ASCII value < 32). Though these are allowed in
         // some filesystems, not many applications handle them well.

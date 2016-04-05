@@ -1,6 +1,6 @@
 {
     "name": "ijortengab/tools",
-    "description": "Collections of Class that don't need a standalone repository. The Swiss Army Knife of IjorTengab.",
+    "description": "Collections of Library that doesn't need a standalone repository. The Swiss Army Knife of IjorTengab.",
     "type": "library",
     "license": "GPL",
     "authors": [
@@ -10,10 +10,7 @@
             "homepage": "http://github.com/ijortengab"
         }
     ],
-    "require": {
-        "psr/log": "^1.0"
-    },
     "autoload": {
-        "psr-4": {"IjorTengab\\": "src/"}
+        "psr-4": {"IjorTengab\\Tools\\": "src/"}
     }
 }

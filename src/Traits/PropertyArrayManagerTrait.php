@@ -22,47 +22,55 @@ trait PropertyArrayManagerTrait
      *
      *   // Retrieve melalui cara langsung akses property.
      *   $value = $myClass->option['foo'];
+     *
      *   // Retrieve melalui method yang mengasyikkan ini.
      *   $value = $myClass->option('foo');
      *
      *   // Retrieve melalui cara langsung akses property.
      *   $value = $myClass->option['foo']['bar'];
+     *
      *   // Retrieve melalui method yang mengasyikkan ini.
-     *   $value = $myClass->option('foo][bar');
+     *   $value = $myClass->option('foo->bar');
      *
      *   // Create/Update melalui cara langsung akses property.
      *   $myClass->option['foo'] = 'hallo';
+     *
      *   // Update melalui method yang mengasyikkan ini.
      *   $myClass->option('foo', 'hallo');
      *
      *   // Create/Update melalui cara langsung akses property.
      *   $myClass->option['foo'] = 'hallo';
      *   $myClass->option['bar'] = 'world';
+     *
      *   // Create/Update melalui method yang mengasyikkan ini.
      *   $myClass->option('foo', 'hallo')->option('bar', 'world');
      *
      *   // Create/Update melalui cara langsung akses property.
      *   $myClass->option['foo']['child'] = 'hallo';
      *   $myClass->option['bar']['child'] = 'world';
+     *
      *   // Create/Update melalui method yang mengasyikkan ini.
-     *   $myClass->option('foo][child', 'hallo')
-     *           ->option('bar][child', 'world');
+     *   $myClass->option('foo->child', 'hallo')
+     *           ->option('bar->child', 'world');
      *
      *   // Create/Update kemudian Retrieve melalui cara langsung akses property.
      *   $myClass->option['foo']['child'] = 'hallo';
      *   $myClass->option['bar']['child'] = 'world';
      *   $value = $myClass->option['other']['child'];
+     *
      *   // Create/Update kemudian Retrieve melalui method yang mengasyikkan ini.
-     *   $value = $myClass->option('foo][child', 'hallo')
-     *                    ->option('bar][child', 'world')
-     *                    ->option('other][child');
+     *   $value = $myClass->option('foo->child', 'hallo')
+     *                    ->option('bar->child', 'world')
+     *                    ->option('other->child');
      *
      *   // Closure/Lambda function/Anonymous function.
+     *
      *   // Create/Update melalui cara langsung akses property.
      *   $say = function() {return 'I Love You';};
      *   $myClass->option['get']['merried'] = $say();
+     *
      *   // Create/Update melalui method yang mengasyikkan ini.
-     *   $myClass->option('get][merried', function() {return 'I Love You';});
+     *   $myClass->option('get->merried', function() {return 'I Love You';});
      *
      *   // Closure/Lambda function/Anonymous function with parameter.
      *   $say = function($lang) {
@@ -72,10 +80,12 @@ trait PropertyArrayManagerTrait
      *           case 'id' : return 'Aku Cinta Kamu';
      *       }
      *   };
+     *
      *   // Create/Update melalui cara langsung akses property.
      *   $myClass->option['get']['merried'] = $say('de');
+     *
      *   // Create/Update melalui method yang mengasyikkan ini.
-     *   $myClass->option('get][merried', $say, 'de');
+     *   $myClass->option('get->merried', $say, 'de');
      *
      *   ?>
      *
@@ -149,7 +159,9 @@ trait PropertyArrayManagerTrait
                 else {
                     // Terinspirasi dari fungsi di Drupal 7:
                     // drupal_array_get_nested_value().
-                    $parents = explode('][', $variable);
+                    // $parents = explode('->', $variable);
+                    $parents = preg_split('/\]?\[/', rtrim($variable, ']'));
+
                     $ref = &$this->{$property};
                     foreach ($parents as $parent) {
                         if (is_array($ref) && array_key_exists($parent, $ref)) {
@@ -169,7 +181,9 @@ trait PropertyArrayManagerTrait
                 // drupal_array_set_nested_value().
                 $key = array_shift($args);
                 $value = array_shift($args);
-                $parents = explode('][', $key);
+                // $parents = explode('->', $key);
+                $parents = preg_split('/\]?\[/', rtrim($key, ']'));
+
                 $ref = &$this->{$property};
                 foreach ($parents as $parent) {
                     $ref_before = &$ref;
@@ -190,7 +204,9 @@ trait PropertyArrayManagerTrait
             default:
                 // Untuk argument lebih dari dua.
                 $key = array_shift($args);
-                $parents = explode('][', $key);
+                // $parents = explode('->', $key);
+                $parents = preg_split('/\]?\[/', rtrim($key, ']'));
+
                 $ref = &$this->{$property};
                 foreach ($parents as $parent) {
                     $ref = &$ref[$parent];
