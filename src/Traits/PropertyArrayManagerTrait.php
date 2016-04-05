@@ -9,7 +9,7 @@ trait PropertyArrayManagerTrait
      * class (atau disebut juga property) bertipe array secara mudah dan
      * mengasyikkan (relative menurut saya sendiri :-).
      *
-     * Mendukung array multidimensi, closure (anonymous function), dll.
+     * Mendukung array multidimensi dan closure (anonymous function).
      *
      * Method ini mengubah CRUD array dari langsung (melalui expresi) menjadi
      * melalui fungsi (method).
@@ -50,18 +50,20 @@ trait PropertyArrayManagerTrait
      *   $myClass->option['bar']['child'] = 'world';
      *
      *   // Create/Update melalui method yang mengasyikkan ini.
-     *   $myClass->option('foo->child', 'hallo')
-     *           ->option('bar->child', 'world');
+     *   $myClass->option('foo[child]', 'hallo')
+     *           ->option('bar[child]', 'world');
      *
-     *   // Create/Update kemudian Retrieve melalui cara langsung akses property.
-     *   $myClass->option['foo']['child'] = 'hallo';
-     *   $myClass->option['bar']['child'] = 'world';
+     *   // Create/Update kemudian Retrieve melalui cara langsung akses
+     *   property.
+     *   $myClass->option['foo']['child']['subchild'] = 'hallo';
+     *   $myClass->option['bar']['child']['subchild'] = 'world';
      *   $value = $myClass->option['other']['child'];
      *
-     *   // Create/Update kemudian Retrieve melalui method yang mengasyikkan ini.
-     *   $value = $myClass->option('foo->child', 'hallo')
-     *                    ->option('bar->child', 'world')
-     *                    ->option('other->child');
+     *   // Create/Update kemudian Retrieve melalui method yang mengasyikkan
+     *   ini.
+     *   $value = $myClass->option('foo[child][subchild]', 'hallo')
+     *                    ->option('bar[child][subchild]', 'world')
+     *                    ->option('other[child]');
      *
      *   // Closure/Lambda function/Anonymous function.
      *
@@ -70,7 +72,7 @@ trait PropertyArrayManagerTrait
      *   $myClass->option['get']['merried'] = $say();
      *
      *   // Create/Update melalui method yang mengasyikkan ini.
-     *   $myClass->option('get->merried', function() {return 'I Love You';});
+     *   $myClass->option('get[merried]', function() {return 'I Love You';});
      *
      *   // Closure/Lambda function/Anonymous function with parameter.
      *   $say = function($lang) {
@@ -85,7 +87,7 @@ trait PropertyArrayManagerTrait
      *   $myClass->option['get']['merried'] = $say('de');
      *
      *   // Create/Update melalui method yang mengasyikkan ini.
-     *   $myClass->option('get->merried', $say, 'de');
+     *   $myClass->option('get[merried]', $say, 'de');
      *
      *   ?>
      *
