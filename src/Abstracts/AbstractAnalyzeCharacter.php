@@ -12,10 +12,10 @@ abstract class AbstractAnalyzeCharacter
     protected $current_column = 1;
     protected $current_line = 1;
     protected $current_line_string = null;
-    protected $current_char = 0;
-    protected $current_char_string = null;
-    protected $next_char_string = null;
-    protected $prev_char_string = null;
+    protected $current_character = 0;
+    protected $current_character_string = null;
+    protected $next_character_string = null;
+    protected $prev_character_string = null;
     protected $is_last = false;
     protected $is_break = false;
 
@@ -27,7 +27,7 @@ abstract class AbstractAnalyzeCharacter
     /**
      *
      */
-    abstract protected function analyzeCurrentChar();
+    abstract protected function analyzeCurrentCharacter();
 
     /**
      * Construct.
@@ -54,18 +54,18 @@ abstract class AbstractAnalyzeCharacter
             // $this->debug('------------------------', '', 1);
             // $this->debug($this->current_line, '$this->current_line', 1);
             // $this->debug($this->current_column, '$this->current_column', 1);
-            // $this->debug($this->current_char, '$this->current_char', 1);
+            // $this->debug($this->current_character, '$this->current_character', 1);
             if ($this->current_column === 1) {
                 $this->populateCurrentLine();
                 $this->analyzeCurrentLine();
             }
-            $this->populateCurrentChar();
-            $this->manipulateCurrentChar();
-            $this->assignCurrentChar();
-            $this->analyzeCurrentChar();
+            $this->populateCurrentCharacter();
+            $this->manipulateCurrentCharacter();
+            $this->assignCurrentCharacter();
+            $this->analyzeCurrentCharacter();
             $this->prepareNextLoop();
-            $this->clearAssignChar();
-        } while($this->next_char_string !== false);
+            $this->resetAssignCharacter();
+        } while($this->next_character_string !== false);
         $this->afterAnalyze();
     }
 
@@ -92,7 +92,7 @@ abstract class AbstractAnalyzeCharacter
     {
         // $this->debug(__METHOD__, '__METHOD__');
         $this->current_line_string = '';
-        $leftover = substr($this->raw, $this->current_char);
+        $leftover = substr($this->raw, $this->current_character);
         if (preg_match('/.*/', $leftover, $match)) {
             // $this->debug($match, '$match', 2);
             $this->current_line_string = $match[0];
@@ -103,54 +103,54 @@ abstract class AbstractAnalyzeCharacter
     /**
      * Todo.
      */
-    protected function populateCurrentChar()
+    protected function populateCurrentCharacter()
     {
         // $this->debug(__METHOD__, '__METHOD__');
-        $x = $this->current_char;
+        $x = $this->current_character;
         $ch = isset($this->raw[$x]) ? $this->raw[$x] : false;
         $nch = isset($this->raw[$x+1]) ? $this->raw[$x+1] : false;
         $pch = isset($this->raw[$x-1]) ? $this->raw[$x-1] : false;
-        $this->current_char_string = $ch;
-        $this->next_char_string = $nch;
-        $this->prev_char_string = $pch;
+        $this->current_character_string = $ch;
+        $this->next_character_string = $nch;
+        $this->prev_character_string = $pch;
         // Debug.
-        // $this->debug($this->current_char_string, '$this->current_char_string', 1);
-        // $this->debug($this->next_char_string, '$this->next_char_string', 1);
-        // $this->debug($this->prev_char_string, '$this->prev_char_string', 1);
+        // $this->debug($this->current_character_string, '$this->current_character_string', 1);
+        // $this->debug($this->next_character_string, '$this->next_character_string', 1);
+        // $this->debug($this->prev_character_string, '$this->prev_character_string', 1);
     }
 
     /**
      * Todo.
      */
-    protected function manipulateCurrentChar()
+    protected function manipulateCurrentCharacter()
     {
         // $this->debug(__METHOD__, '__METHOD__');
-        $x = $this->current_char;
-        $ch = $this->current_char_string;
-        $nch = $this->next_char_string;
+        $x = $this->current_character;
+        $ch = $this->current_character_string;
+        $nch = $this->next_character_string;
         if ($ch == "\r" && $nch == "\n") {
             $ch = "\r\n";
             $nch = isset($this->raw[$x+1]) ? $this->raw[$x+1] : false;
-            $this->current_char_string = $ch;
-            $this->next_char_string = $nch;
-            $this->current_char++;
+            $this->current_character_string = $ch;
+            $this->next_character_string = $nch;
+            $this->current_character++;
         }
         // Debug.
-        // $this->debug($this->current_char_string, '$this->current_char_string', 1);
-        // $this->debug($this->next_char_string, '$this->next_char_string', 1);
-        // $this->debug($this->prev_char_string, '$this->prev_char_string', 1);
+        // $this->debug($this->current_character_string, '$this->current_character_string', 1);
+        // $this->debug($this->next_character_string, '$this->next_character_string', 1);
+        // $this->debug($this->prev_character_string, '$this->prev_character_string', 1);
     }
 
     /**
      * Todo.
      */
-    protected function assignCurrentChar()
+    protected function assignCurrentCharacter()
     {
         // $this->debug(__METHOD__, '__METHOD__');
-        if ($this->next_char_string === false) {
+        if ($this->next_character_string === false) {
             $this->is_last = true;
         }
-        if (in_array($this->current_char_string, ["\r", "\n", "\r\n"])) {
+        if (in_array($this->current_character_string, ["\r", "\n", "\r\n"])) {
             $this->is_break = true;
         }
     }
@@ -165,7 +165,7 @@ abstract class AbstractAnalyzeCharacter
             $this->current_line++;
         }
 
-        $this->current_char++;
+        $this->current_character++;
         //
         if ($this->is_break) {
             $this->current_column = 1;
@@ -178,7 +178,7 @@ abstract class AbstractAnalyzeCharacter
     /**
      *
      */
-    protected function clearAssignChar()
+    protected function resetAssignCharacter()
     {
         $this->is_break = false;
     }

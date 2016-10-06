@@ -1,8 +1,7 @@
 IjorTengab's Tools
 ==================
 
-Collections of Library that doesn't need a standalone repository. The Swiss Army
-Knife of IjorTengab.
+The Swiss Army Knife of IjorTengab. Collection of common useful script.
 
 ## Requirement
   - PHP > 5.4.0
@@ -29,10 +28,16 @@ ini. Perhatikan _trailing comma_ agar format json anda tidak rusak.
 
 ## List of Collections.
 
-  - Class ```IjorTengab\Tools\Functions\ArrayDimensional```
-  - Class ```IjorTengab\Tools\Functions\CamelCase```
-  - Class ```IjorTengab\Tools\Functions\FileName```
-  - Trait ```IjorTengab\Tools\Traits\PropertyArrayManagerTrait```
+  - Abstract ```IjorTengab\Tools\Abstracts\AbstractAnalyzeCharacter```
+  - Function ```IjorTengab\Tools\Functions\ArrayDimensional```
+  - Function ```IjorTengab\Tools\Functions\CamelCase```
+  - Function ```IjorTengab\Tools\Functions\FileName```
+  - Trait ```IjorTengab\Tools\Traits\ArrayHelperTrait```
+
+### IjorTengab\Tools\Abstracts\AbstractAnalyzeCharacter
+
+Abstract untuk memudahkan analisis karakter satu per satu pada sebuah string.
+
 
 ### IjorTengab\Tools\Functions\ArrayDimensional
 
@@ -66,7 +71,7 @@ Contoh:
  - File_1.jpg
  - File_2.jpg
 
-### IjorTengab\Tools\Traits\PropertyArrayManagerTrait
+### IjorTengab\Tools\Traits\ArrayHelperTrait
 
-Memberikan method ```propertyArrayManager``` untuk menyederhanakan operasi CRUD
-terhadap property (variable dalam class) bertipe array.
+Memberikan method ```_arrayHelper``` untuk menyederhanakan operasi CRUD
+terhadap property bertipe array.
