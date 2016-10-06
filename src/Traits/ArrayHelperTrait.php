@@ -2,17 +2,16 @@
 
 namespace IjorTengab\Tools\Traits;
 
-trait PropertyArrayManagerTrait
+trait ArrayHelperTrait
 {
     /**
      * Method untuk melakukan operasi update atau retrieve variable dalam
      * class (atau disebut juga property) bertipe array secara mudah dan
-     * mengasyikkan (relative menurut saya sendiri :-).
+     * mengasyikkan (relative menurut saya sendiri :-). Method ini mengubah CRUD
+     * (Create, Retrieve, Update, Delete) value dalam array dari langsung
+     * (melalui expresi) menjadi melalui fungsi (method).
      *
      * Mendukung array multidimensi dan closure (anonymous function).
-     *
-     * Method ini mengubah CRUD array dari langsung (melalui expresi) menjadi
-     * melalui fungsi (method).
      *
      * Contoh Lengkap Penggunaan (diurut mulai dari sederhana sampai rumit):
      *
@@ -30,7 +29,7 @@ trait PropertyArrayManagerTrait
      *   $value = $myClass->option['foo']['bar'];
      *
      *   // Retrieve melalui method yang mengasyikkan ini.
-     *   $value = $myClass->option('foo->bar');
+     *   $value = $myClass->option('foo[bar]');
      *
      *   // Create/Update melalui cara langsung akses property.
      *   $myClass->option['foo'] = 'hallo';
@@ -99,7 +98,7 @@ trait PropertyArrayManagerTrait
      *   class MyClass
      *   {
      *
-     *       use PropertyArrayManagerTrait;
+     *       use ArrayHelperTrait;
      *
      *       // Property target.
      *       var $options = array(
@@ -107,10 +106,10 @@ trait PropertyArrayManagerTrait
      *           'email' => 'm_roji28@yahoo.com',
      *       );
      *
-     *       // Method options() dibuat sebagai wrapper method propertyArrayManager().
+     *       // Method options() dibuat sebagai wrapper method _arrayHelper().
      *       public function options()
      *       {
-     *           return $this->propertyArrayManager('options', func_get_args());
+     *           return $this->_arrayHelper('options', func_get_args());
      *       }
      *
      *       public function __construct()
@@ -135,7 +134,7 @@ trait PropertyArrayManagerTrait
      *   ?>
      *
      */
-    protected function propertyArrayManager($property, $args = array())
+    protected function _arrayHelper($property, $args = array())
     {
         // Tidak menciptakan property baru.
         // Jika property tidak exists, kembalikan null.
