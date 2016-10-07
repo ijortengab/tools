@@ -43,13 +43,16 @@ abstract class AbstractAnalyzeCharacter
      * Mulai melakukan analisis dengan cara
      * walk through each character.
      */
-    public function analyze()
+    public function looping()
     {
         // $this->debug(__METHOD__, '__METHOD__');
         if (!is_string($this->raw)) {
             return;
         }
-        $this->beforeAnalyze();
+        $is_continue = $this->beforeLooping();
+        if (false === $is_continue) {
+            return;
+        }
         do {
             // $this->debug('------------------------', '', 1);
             // $this->debug($this->current_line, '$this->current_line', 1);
@@ -57,16 +60,33 @@ abstract class AbstractAnalyzeCharacter
             // $this->debug($this->current_character, '$this->current_character', 1);
             if ($this->current_column === 1) {
                 $this->populateCurrentLine();
+                $this->manipulateCurrentLine();
                 $this->analyzeCurrentLine();
             }
             $this->populateCurrentCharacter();
             $this->manipulateCurrentCharacter();
             $this->assignCurrentCharacter();
+            $this->beforeAnalyze();
             $this->analyzeCurrentCharacter();
+            $this->afterAnalyze();
             $this->prepareNextLoop();
             $this->resetAssignCharacter();
         } while($this->next_character_string !== false);
-        $this->afterAnalyze();
+        $this->afterLooping();
+    }
+
+    /**
+     *
+     */
+    protected function beforeLooping()
+    {
+    }
+
+    /**
+     *
+     */
+    protected function afterLooping()
+    {
     }
 
     /**
@@ -74,7 +94,6 @@ abstract class AbstractAnalyzeCharacter
      */
     protected function beforeAnalyze()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
     }
 
     /**
@@ -82,7 +101,6 @@ abstract class AbstractAnalyzeCharacter
      */
     protected function afterAnalyze()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
     }
 
     /**
@@ -99,6 +117,16 @@ abstract class AbstractAnalyzeCharacter
         }
         // $this->debug($this->current_line_string, '$this->current_line_string', 1);
     }
+
+    /**
+     *
+     */
+    protected function manipulateCurrentLine()
+    {
+
+        // return $this;
+    }
+
 
     /**
      * Todo.
