@@ -114,7 +114,7 @@ abstract class AbstractAnalyzeCharacter
         if (preg_match('/.*/', $leftover, $match)) {
             // $this->debug($match, '$match', 2);
             // $this->current_line_string berisi string tanpa break.
-            $this->current_line_string = rtrim($match[0]);
+            $this->current_line_string = rtrim($match[0], "\r\n");
         }
         // $this->debug($this->current_line_string, '$this->current_line_string', 1);
     }
