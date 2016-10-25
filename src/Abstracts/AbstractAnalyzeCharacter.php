@@ -124,7 +124,6 @@ abstract class AbstractAnalyzeCharacter
      */
     protected function manipulateCurrentLine()
     {
-
         // return $this;
     }
 
@@ -159,7 +158,7 @@ abstract class AbstractAnalyzeCharacter
         $nch = $this->next_character_string;
         if ($ch == "\r" && $nch == "\n") {
             $ch = "\r\n";
-            $nch = isset($this->raw[$x+1]) ? $this->raw[$x+1] : false;
+            $nch = isset($this->raw[$x+2]) ? $this->raw[$x+2] : false;
             $this->current_character_string = $ch;
             $this->next_character_string = $nch;
             $this->current_character++;
