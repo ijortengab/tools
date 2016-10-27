@@ -1,8 +1,8 @@
 <?php
 
-namespace IjorTengab\Tools\Traits;
+namespace IjorTengab\Tools\Functions;
 
-trait ArrayHelperTrait
+class ArrayHelper
 {
     /**
      * Method untuk melakukan operasi update atau retrieve variable dalam
@@ -12,6 +12,28 @@ trait ArrayHelperTrait
      * (melalui expresi) menjadi melalui fungsi (method).
      *
      * Mendukung array multidimensi dan closure (anonymous function).
+     *
+     * Cara penggunaan method ini adalah dengan membuat method baru sebagai
+     * pembungkus (wrapper). Seperti contoh dibawah ini:
+     *
+     *   <?php
+     *
+     *   class FooBar
+     *   {
+     *
+     *       // Property target.
+     *       public $options = array(
+     *           'homepage' => 'http://github.com/ijortengab',
+     *           'email' => 'm_roji28@yahoo.com',
+     *       );
+     *
+     *       // Method options() dibuat sebagai wrapper.
+     *       public function options()
+     *       {
+     *           return ArrayHelper::propertyEditor($this, 'options', func_get_args());
+     *       }
+     *   }
+     *   ?>
      *
      * Contoh Lengkap Penggunaan (diurut mulai dari sederhana sampai rumit):
      *
@@ -90,80 +112,36 @@ trait ArrayHelperTrait
      *
      *   ?>
      *
-     * Cara penggunaan method ini adalah dengan membuat method baru sebagai
-     * pembungkus (wrapper). Seperti contoh dibawah ini:
-     *
-     *   <?php
-     *
-     *   class MyClass
-     *   {
-     *
-     *       use ArrayHelperTrait;
-     *
-     *       // Property target.
-     *       var $options = array(
-     *           'homepage' => 'http://github.com/ijortengab',
-     *           'email' => 'm_roji28@yahoo.com',
-     *       );
-     *
-     *       // Method options() dibuat sebagai wrapper method _arrayHelper().
-     *       public function options()
-     *       {
-     *           return $this->_arrayHelper('options', func_get_args());
-     *       }
-     *
-     *       public function __construct()
-     *       {
-     *           // Retrieve semua nilai dari property $options.
-     *           $array = $this->options();
-     *
-     *           // Retrieve value yang mempunyai key 'homepage'.
-     *           $homepage = $this->options('homepage');
-     *
-     *           // Update value yang mempunyai key 'email'.
-     *           $this->options('email', 'm.roji28@gmail.com');
-     *
-     *           // Update keseluruhan nilai dari property $options.
-     *           $array = array('name' => 'IjorTengab');
-     *           $this->options($array);
-     *
-     *           // Clear property $options (empty array)
-     *           $this->options(NULL);
-     *       }
-     *   }
-     *   ?>
-     *
      */
-    protected function _arrayHelper($property, $args = array())
+    public function propertyEditor($object, $property, $args = array())
     {
         // Tidak menciptakan property baru.
         // Jika property tidak exists, kembalikan null.
-        if (!property_exists(__CLASS__, $property)) {
+        if (!property_exists($object, $property)) {
             return;
         }
         switch (count($args)) {
             case 0:
                 // Retrieve value from $property.
-                return $this->{$property};
+                return $object->{$property};
 
             case 1:
                 $variable = array_shift($args);
                 // If NULL, it means reset.
                 if (is_null($variable)) {
-                    $this->{$property} = array();
+                    $object->{$property} = array();
                 }
                 // If Array, it meanse replace all value with that array.
                 elseif (is_array($variable)) {
-                    $this->{$property} = $variable;
+                    $object->{$property} = $variable;
                 }
                 // Otherwise, it means get one info {$property} by key.
                 else {
                     // Terinspirasi dari fungsi di Drupal 7:
                     // drupal_array_get_nested_value().
-                    // $parents = explode('->', $variable);
                     $parents = preg_split('/\]?\[/', rtrim($variable, ']'));
 
-                    $ref = &$this->{$property};
+                    $ref = &$object->{$property};
                     foreach ($parents as $parent) {
                         if (is_array($ref) && array_key_exists($parent, $ref)) {
                             $ref = &$ref[$parent];
@@ -185,7 +163,7 @@ trait ArrayHelperTrait
                 // $parents = explode('->', $key);
                 $parents = preg_split('/\]?\[/', rtrim($key, ']'));
 
-                $ref = &$this->{$property};
+                $ref = &$object->{$property};
                 foreach ($parents as $parent) {
                     $ref_before = &$ref;
                     $ref = &$ref[$parent];
@@ -208,7 +186,7 @@ trait ArrayHelperTrait
                 // $parents = explode('->', $key);
                 $parents = preg_split('/\]?\[/', rtrim($key, ']'));
 
-                $ref = &$this->{$property};
+                $ref = &$object->{$property};
                 foreach ($parents as $parent) {
                     $ref = &$ref[$parent];
                 }
@@ -222,6 +200,6 @@ trait ArrayHelperTrait
         }
 
         // Return object back.
-        return $this;
+        return $object;
     }
 }
