@@ -202,8 +202,8 @@ class ArrayHelper
         // Return object back.
         return $object;
     }
-    
-    
+
+
     /**
      * Mengubah array multidimensi menjadi satu dimensi.
      *
@@ -303,5 +303,17 @@ class ArrayHelper
             // Update hack finish
         }
         return $info;
+    }
+
+    /**
+     *
+     */
+    public static function filterKeyInteger(Array $array) {
+        $integer = array_filter($array, function ($key) {
+            if ($key === 0 || is_int($key)) {
+                return true;
+            }
+        }, ARRAY_FILTER_USE_KEY);
+        return array_intersect_key($array, $integer);
     }
 }
