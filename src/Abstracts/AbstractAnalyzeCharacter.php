@@ -46,7 +46,7 @@ abstract class AbstractAnalyzeCharacter
     public function looping()
     {
         // $this->debug(__METHOD__, '__METHOD__');
-        if (!is_string($this->raw)) {
+        if (!is_string($this->raw) || empty($this->raw)) {
             return;
         }
         $is_continue = $this->beforeLooping();

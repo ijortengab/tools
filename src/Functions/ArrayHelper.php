@@ -113,7 +113,7 @@ class ArrayHelper
      *   ?>
      *
      */
-    public function propertyEditor($object, $property, $args = array())
+    public static function propertyEditor($object, $property, $args = array())
     {
         // Tidak menciptakan property baru.
         // Jika property tidak exists, kembalikan null.
@@ -202,7 +202,6 @@ class ArrayHelper
         // Return object back.
         return $object;
     }
-
 
     /**
      * Mengubah array multidimensi menjadi satu dimensi.
@@ -308,12 +307,29 @@ class ArrayHelper
     /**
      *
      */
-    public static function filterKeyInteger(Array $array) {
-        $integer = array_filter($array, function ($key) {
-            if ($key === 0 || is_int($key)) {
-                return true;
-            }
-        }, ARRAY_FILTER_USE_KEY);
-        return array_intersect_key($array, $integer);
+    public static function filterKeyInteger(Array $array)
+    {
+        return array_filter($array, 'is_int', ARRAY_FILTER_USE_KEY);
     }
+
+    /**
+     *
+     */
+    public static function filterKeyPattern(Array $array, $pattern)
+    {
+        return array_filter($array, function ($key) use ($pattern) {
+            return preg_match($pattern, $key);
+        }, ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     *
+     */
+    public static function filterChild(Array $array, Array $condition)
+    {
+        return array_filter($array, function ($value) use ($condition) {
+            return !empty(array_intersect_assoc((array) $value, $condition));
+        });
+    }
+
 }
