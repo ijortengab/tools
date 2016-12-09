@@ -165,6 +165,17 @@ class ArrayHelper
 
                 $ref = &$object->{$property};
                 foreach ($parents as $parent) {
+                    // Edited, ada kejadian seperti ini.
+                    // 'data[foo] = string'
+                    // sehingga saat
+                    // 'data[foo][bar]' = 'string'
+                    // menghasilkan error sbb:
+                    // Warning: Illegal string offset 'value' in __FILE__ on
+                    // line __LINE__.
+                    // Solusi, paksa parent menjadi empty array.
+                    if (!is_array($ref)) {
+                        $ref = array();
+                    }
                     $ref_before = &$ref;
                     $ref = &$ref[$parent];
                 }
