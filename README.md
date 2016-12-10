@@ -29,24 +29,26 @@ ini. Perhatikan _trailing comma_ agar format json anda tidak rusak.
 ## List of Collections.
 
   - Abstract ```IjorTengab\Tools\Abstracts\AbstractAnalyzeCharacter```
-  - Function ```IjorTengab\Tools\Functions\ArrayDimensional```
-  - Function ```IjorTengab\Tools\Functions\CamelCase```
-  - Function ```IjorTengab\Tools\Functions\FileName```
-  - Trait ```IjorTengab\Tools\Traits\ArrayHelperTrait```
+  - Class static function ```IjorTengab\Tools\Functions\ArrayHelper::*```
+  - Class static function  ```IjorTengab\Tools\Functions\CamelCase::*```
+  - Class static function  ```IjorTengab\Tools\Functions\FileName::*```
+  - Function ```IjorTengab\Override\PHP\VarDump\var_dump```
+  - Function ```IjorTengab\Override\PHP\TmpFile\tmpfile```
 
 ### IjorTengab\Tools\Abstracts\AbstractAnalyzeCharacter
 
 Abstract untuk memudahkan analisis karakter satu per satu pada sebuah string.
 
 
-### IjorTengab\Tools\Functions\ArrayDimensional
-
-Menyediakan method static untuk mengubah array multidimensi menjadi satu dimensi
-dan sebaliknya.
+### IjorTengab\Tools\Functions\ArrayHelper
 
 ```php
-ArrayDimensional::simplify();
-ArrayDimensional::expand();
+ArrayHelper::propertyEditor();
+ArrayHelper::dimensionalSimplify();
+ArrayHelper::dimensionalExpand();
+ArrayHelper::filterKeyInteger();
+ArrayHelper::filterKeyPattern();
+ArrayHelper::filterChild();
 ```
 
 ### IjorTengab\Tools\Functions\CamelCase
@@ -70,8 +72,3 @@ Contoh:
  - File_0.jpg
  - File_1.jpg
  - File_2.jpg
-
-### IjorTengab\Tools\Traits\ArrayHelperTrait
-
-Memberikan method ```_arrayHelper``` untuk menyederhanakan operasi CRUD
-terhadap property bertipe array.

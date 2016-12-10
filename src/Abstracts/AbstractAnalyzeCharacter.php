@@ -3,12 +3,88 @@
 namespace IjorTengab\Tools\Abstracts;
 
 /**
+ * Abstract untuk menganalisis karakter satu per satu. Masukkan string pada
+ * pada property $raw. Jalankan method looping() maka property akan terisi
+ * sesuai dengan kondisi karakter saat ini.
+ *
+ * Secara default, karakter break dengan value "\r\n" akan dimanipulasi sehingga
+ * di analyze sebagai satu karakter. @see method manipulateCurrentCharacter().
+ *
+ * Contoh:
+ *
+ * Kita buat file sebagai berikut:
+ *
+ * <?php
+ * require __DIR__ . '/src/Abstracts/AbstractAnalyzeCharacter.php';
+ * require __DIR__ . '/functions/var_dump.php';
+ * use IjorTengab\Tools\Abstracts\AbstractAnalyzeCharacter;
+ * use function IjorTengab\Override\PHP\VarDump\var_dump;
+ * use const IjorTengab\Override\PHP\VarDump\SUBJECT;
+ *
+ * class AnalyzeCharacter extends AbstractAnalyzeCharacter {
+ *     protected function analyzeCurrentLine()
+ *     {
+ *         var_dump($this->current_line, SUBJECT);
+ *         var_dump($this->current_line_string, SUBJECT);
+ *     }
+ *     protected function analyzeCurrentCharacter()
+ *     {
+ *         var_dump($this->current_character, SUBJECT);
+ *         var_dump($this->current_character_string, SUBJECT);
+ *     }
+ * }
+ * $content = <<<CONTENT
+ * a~z
+ * 0~9
+ * CONTENT;
+ * $analyze = new AnalyzeCharacter($content);
+ * $analyze->looping();
+ * ?>
+ *
+ * Output dari Hasil eksekusi file diatas adalah:
+ *
+ * var_dump($this->current_line):
+ * int(1)
+ * var_dump($this->current_line_string):
+ * string(3) "a~z"
+ * var_dump($this->current_character):
+ * int(0)
+ * var_dump($this->current_character_string):
+ * string(1) "a"
+ * var_dump($this->current_character):
+ * int(1)
+ * var_dump($this->current_character_string):
+ * string(1) "~"
+ * var_dump($this->current_character):
+ * int(2)
+ * var_dump($this->current_character_string):
+ * string(1) "z"
+ * var_dump($this->current_character):
+ * int(4)
+ * var_dump($this->current_character_string):
+ * string(2) "
+ * "
+ * var_dump($this->current_line):
+ * int(2)
+ * var_dump($this->current_line_string):
+ * string(3) "0~9"
+ * var_dump($this->current_character):
+ * int(5)
+ * var_dump($this->current_character_string):
+ * string(1) "0"
+ * var_dump($this->current_character):
+ * int(6)
+ * var_dump($this->current_character_string):
+ * string(1) "~"
+ * var_dump($this->current_character):
+ * int(7)
+ * var_dump($this->current_character_string):
+ * string(1) "9"
  *
  */
 abstract class AbstractAnalyzeCharacter
 {
-    public $debug = false;
-    protected $raw;
+    protected $raw = '';
     protected $current_column = 1;
     protected $current_line = 1;
     protected $current_line_string = null;
@@ -20,12 +96,14 @@ abstract class AbstractAnalyzeCharacter
     protected $is_break = false;
 
     /**
-     *
+     * Saat looping berada pada baris baru, maka method ini akan dijalankan.
      */
     abstract protected function analyzeCurrentLine();
 
     /**
-     *
+     * Method ini akan dijalankan sebanyak karakter yang ada pada property $raw.
+     * Untuk mengetahui karakter saat ini, lihat pada property
+     * $current_character_string.
      */
     abstract protected function analyzeCurrentCharacter();
 
@@ -45,30 +123,29 @@ abstract class AbstractAnalyzeCharacter
      */
     public function looping()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
         if (!is_string($this->raw) || empty($this->raw)) {
             return;
         }
-        $is_continue = $this->beforeLooping();
-        if (false === $is_continue) {
+        if (false === $this->validate()) {
             return;
         }
+        $this->beforeLooping();
         do {
-            // $this->debug('------------------------', '', 1);
-            // $this->debug($this->current_line, '$this->current_line', 1);
-            // $this->debug($this->current_column, '$this->current_column', 1);
-            // $this->debug($this->current_character, '$this->current_character', 1);
             if ($this->current_column === 1) {
+                // Current Line.
                 $this->populateCurrentLine();
                 $this->manipulateCurrentLine();
+                $this->beforeAnalyzeCurrentLine();
                 $this->analyzeCurrentLine();
+                $this->afterAnalyzeCurrentLine();
             }
+            // Current Character.
             $this->populateCurrentCharacter();
             $this->manipulateCurrentCharacter();
             $this->assignCurrentCharacter();
-            $this->beforeAnalyze();
+            $this->beforeAnalyzeCurrentCharacter();
             $this->analyzeCurrentCharacter();
-            $this->afterAnalyze();
+            $this->afterAnalyzeCurrentCharacter();
             $this->prepareNextLoop();
             $this->resetAssignCharacter();
         } while($this->next_character_string !== false);
@@ -76,64 +153,80 @@ abstract class AbstractAnalyzeCharacter
     }
 
     /**
-     *
+     * Berikan return === false, maka looping akan dibatalkan.
+     * Selain ```false```, looping akan dijalankan meski return === null.
+     */
+    protected function validate()
+    {
+    }
+
+    /**
+     * Gunakan method ini jika diperlukan.
+     * @see
+     *   self::looping()
      */
     protected function beforeLooping()
     {
     }
 
     /**
-     *
+     * Gunakan method ini jika diperlukan.
+     * @see
+     *   self::looping()
      */
     protected function afterLooping()
     {
     }
 
     /**
-     *
-     */
-    protected function beforeAnalyze()
-    {
-    }
-
-    /**
-     *
-     */
-    protected function afterAnalyze()
-    {
-    }
-
-    /**
-     *
+     * Method untuk mengisi property $current_line_string.
      */
     protected function populateCurrentLine()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
         $this->current_line_string = '';
         $leftover = substr($this->raw, $this->current_character);
         if (preg_match('/.*/', $leftover, $match)) {
-            // $this->debug($match, '$match', 2);
             // $this->current_line_string berisi string tanpa break.
             $this->current_line_string = rtrim($match[0], "\r\n");
         }
-        // $this->debug($this->current_line_string, '$this->current_line_string', 1);
     }
 
     /**
+     * Gunakan method ini jika diperlukan.
+     * @see
+     *   self::looping()
      *
+     * Gunakan method ini, jika anda melakukan manipulasi isi dari property
+     * $current_line_string.
      */
     protected function manipulateCurrentLine()
     {
-        // return $this;
     }
 
+    /**
+     * Gunakan method ini jika diperlukan.
+     * @see
+     *   self::looping()
+     */
+    protected function beforeAnalyzeCurrentLine()
+    {
+    }
 
     /**
-     * Todo.
+     * Gunakan method ini jika diperlukan.
+     * @see
+     *   self::looping()
+     */
+    protected function afterAnalyzeCurrentLine()
+    {
+    }
+
+    /**
+     * Method untuk mengisi property $current_character_string,
+     * $next_character_string, dan $prev_character_string.
      */
     protected function populateCurrentCharacter()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
         $x = $this->current_character;
         $ch = isset($this->raw[$x]) ? $this->raw[$x] : false;
         $nch = isset($this->raw[$x+1]) ? $this->raw[$x+1] : false;
@@ -141,18 +234,16 @@ abstract class AbstractAnalyzeCharacter
         $this->current_character_string = $ch;
         $this->next_character_string = $nch;
         $this->prev_character_string = $pch;
-        // Debug.
-        // $this->debug($this->current_character_string, '$this->current_character_string', 1);
-        // $this->debug($this->next_character_string, '$this->next_character_string', 1);
-        // $this->debug($this->prev_character_string, '$this->prev_character_string', 1);
     }
 
     /**
-     * Todo.
+     * Method untuk mengubah property yang diset oleh method
+     * self::populateCurrentCharacter().
+     * Secara default karakter break "\r\n" akan dijadikan sebagai
+     * satu karakter.
      */
     protected function manipulateCurrentCharacter()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
         $x = $this->current_character;
         $ch = $this->current_character_string;
         $nch = $this->next_character_string;
@@ -163,18 +254,13 @@ abstract class AbstractAnalyzeCharacter
             $this->next_character_string = $nch;
             $this->current_character++;
         }
-        // Debug.
-        // $this->debug($this->current_character_string, '$this->current_character_string', 1);
-        // $this->debug($this->next_character_string, '$this->next_character_string', 1);
-        // $this->debug($this->prev_character_string, '$this->prev_character_string', 1);
     }
 
     /**
-     * Todo.
+     * Gunakan method ini, untuk memberikan tanda true pada property.
      */
     protected function assignCurrentCharacter()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
         if ($this->next_character_string === false) {
             $this->is_last = true;
         }
@@ -184,17 +270,35 @@ abstract class AbstractAnalyzeCharacter
     }
 
     /**
-     *
+     * Gunakan method ini jika diperlukan.
+     * @see
+     *   self::looping()
+     */
+    protected function beforeAnalyzeCurrentCharacter()
+    {
+    }
+
+    /**
+     * Gunakan method ini jika diperlukan.
+     * @see
+     *   self::looping()
+     */
+    protected function afterAnalyzeCurrentCharacter()
+    {
+    }
+
+    /**
+     * Method untuk mempersiapkan segala sesuatu sebelum
+     * kembali looping ke karakter berikutnya.
+     * Jika anda meng-override method ini, pastikan jalankan
+     * parent::prepareNextLoop().
      */
     protected function prepareNextLoop()
     {
-        // $this->debug(__METHOD__, '__METHOD__');
         if ($this->is_break && !$this->is_last) {
             $this->current_line++;
         }
-
         $this->current_character++;
-        //
         if ($this->is_break) {
             $this->current_column = 1;
         }
@@ -204,37 +308,10 @@ abstract class AbstractAnalyzeCharacter
     }
 
     /**
-     *
+     * Gunakan method ini untuk menghapus tanda true pada property.
      */
     protected function resetAssignCharacter()
     {
         $this->is_break = false;
-    }
-
-    /**
-     * Debug.
-     */
-    protected function debug($variable, $name, $indent = 0)
-    {
-        if (!$this->debug) {
-            return;
-        }
-        ob_start();
-        var_dump($variable);
-        $debugoutput = ob_get_contents();
-        ob_end_clean();
-        /* Indent. */
-        $indentstring = '';
-        while ($indent) {
-            $indentstring .= '  ';
-            $indent--;
-        }
-        if ($indentstring !== '') {
-            $debugoutput = str_replace("\n","\n" . $indentstring, $debugoutput);
-            $debugoutput = rtrim($debugoutput, ' ');
-        }
-        /* Indent. */
-        echo $indentstring . 'var_dump(' . $name . '): ';
-        echo $debugoutput;
     }
 }

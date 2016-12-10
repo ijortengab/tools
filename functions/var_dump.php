@@ -57,17 +57,31 @@ function var_dump($variable_value, $flags = 0) {
         $variable_name = '';
         // Pattern from php dot net.
         $pattern = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
-        if (preg_match_all('/var_dump\s*\(\s*(?<name>\$+' . $pattern . ')/', $row, $matches, PREG_SET_ORDER)) {
-            if (!isset($cache_file_line[$file . ':' . $line])) {
-                $cache_file_line[$file . ':' . $line] = $matches;
-            }
-            $variable_name = array_shift($cache_file_line[$file . ':' . $line])['name'];
+        $found = false;
+        if (preg_match_all('/var_dump\s*\(\s*(?<name>\$+' . $pattern . ')(?<property>->' . $pattern . ')*/', $row, $matches, PREG_SET_ORDER)) {
+            $found = true;
         }
         elseif (preg_match_all('/var_dump\s*\(\s*(?<name>.+)(,\s*[~A-Z]+(\s*[&\|\^]\s*[~A-Z]+)*)\)\s*;/', $row, $matches, PREG_SET_ORDER)) {
+            $found = true;
+        }
+        if ($found) {
+            // Untuk satu baris terdapat banyak eksekusi var_dump(), maka kita
+            // perlu menyimpan data ke dalam cache.
+            // dan juga perlu diperhatian jika var_dump berada pada
+            // looping (misal: foreach).
             if (!isset($cache_file_line[$file . ':' . $line])) {
                 $cache_file_line[$file . ':' . $line] = $matches;
             }
-            $variable_name = array_shift($cache_file_line[$file . ':' . $line])['name'];
+            elseif (empty($cache_file_line[$file . ':' . $line])) {
+                // Jika terjadi looping, maka array_shift akan menghabiskan
+                // isi dari cache, oleh karena itu kita perlu mengisi kembali.
+                $cache_file_line[$file . ':' . $line] = $matches;
+            }
+            $get = array_shift($cache_file_line[$file . ':' . $line]);
+            $variable_name = $get['name'];
+            if (isset($get['property'])) {
+                $variable_name .= $get['property'];
+            }
         }
         if ($flags & FILE) {
         $string['file'] = 'File: ' . $file . PHP_EOL;

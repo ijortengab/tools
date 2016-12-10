@@ -8,6 +8,9 @@ class CamelCase
      * Mengubah string dari request_home_page_authenticated, menjadi
      * requestHomePageAuthenticated yang menjadi standard penamaan
      * method pada PSR-1.
+     *
+     * @reference
+     *     Doctrine\Common\Inflector\Inflector::camelize();
      */
     public static function convertFromUnderScore($string)
     {
@@ -22,20 +25,9 @@ class CamelCase
         }
 
         // Action.
-        $result = $string;
-        $result = strtolower($result);
-        $explode = explode('_', $result);
-        do {
-            if (!isset($x)) {
-                $x = 0;
-                $method = $explode[$x];
-            }
-            else {
-                $method .= ucfirst($explode[$x]);
-            }
-        } while(count($explode) > ++$x);
-        $cache[$string] = $method;
-        return $method;
+        $result =  lcfirst(str_replace(" ", "", ucwords(strtr(strtolower($string), "_", " "))));
+        $cache[$string] = $result;
+        return $result;
     }
 
     /**
