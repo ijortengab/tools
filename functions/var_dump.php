@@ -55,16 +55,8 @@ function var_dump($variable_value, $flags = 0) {
         }
         $row = $lines[$line - 1];
         $variable_name = '';
-        // Pattern from php dot net.
-        $pattern = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
-        $found = false;
-        if (preg_match_all('/var_dump\s*\(\s*(?<name>\$+' . $pattern . ')(?<property>->' . $pattern . ')*/', $row, $matches, PREG_SET_ORDER)) {
-            $found = true;
-        }
-        elseif (preg_match_all('/var_dump\s*\(\s*(?<name>.+)(,\s*[~A-Z]+(\s*[&\|\^]\s*[~A-Z]+)*)\)\s*;/', $row, $matches, PREG_SET_ORDER)) {
-            $found = true;
-        }
-        if ($found) {
+        preg_match_all('/var_dump\s*\(\s*(?<name>.+)(,\s*[~A-Z]+(\s*[&\|\^]\s*[~A-Z]+)*)\)\s*;/', $row, $matches, PREG_SET_ORDER);
+        if ($matches) {
             // Untuk satu baris terdapat banyak eksekusi var_dump(), maka kita
             // perlu menyimpan data ke dalam cache.
             // dan juga perlu diperhatian jika var_dump berada pada

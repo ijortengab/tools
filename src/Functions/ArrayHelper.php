@@ -343,4 +343,53 @@ class ArrayHelper
         });
     }
 
+    /**
+     *
+     */
+    public static function elementEditor(&$array)
+    {
+        $arguments = func_get_args();
+        // For arguments:
+        // $array, 'insert', 'before/after', 'key', $sub_array.
+        if (
+            count($arguments) === 5 &&
+            $arguments[1] == 'insert' &&
+            in_array($arguments[2], ['before', 'after']) &&
+            array_key_exists($arguments[3], $array) &&
+            is_array($arguments[4])
+            ) {
+            reset($array);
+            $position = 1;
+            while ($each = each($array)) {
+                switch ($arguments[3]) {
+                    case $each['key']:
+                        // Ternyata jika value 0, maka lolos juga.
+                        // Perlu validasi ulang.
+                        if ($arguments[3] === $each['key']) {
+                            break 2;
+                        }
+                }
+                $position++;
+            }
+            switch ($arguments[2]) {
+                case 'before':
+                    $position -= 1;
+                    break;
+            }
+            $prepend = array_slice($array, 0, $position, true);
+            $append = array_slice($array, $position, null, true);
+            $array = $prepend + $arguments[4] + $append;
+        }
+        // For arguments:
+        // $array, 'replace', 'key', $sub_array.
+        elseif (
+            count($arguments) === 4 &&
+            $arguments[1] == 'replace' &&
+            array_key_exists($arguments[2], $array) &&
+            is_array($arguments[3])
+        ) {
+            self::elementEditor($array, 'insert', 'before', $arguments[2], $arguments[3]);
+            unset($array[$arguments[2]]);
+        }
+    }
 }
