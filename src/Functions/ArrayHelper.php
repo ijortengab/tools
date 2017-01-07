@@ -112,6 +112,21 @@ class ArrayHelper
      *
      *   ?>
      *
+     * ===============================================
+     * WARNING WARNING WARNING WARNING WARNING WARNING
+     * ===============================================
+     *
+     * Mengeset data dengan value null sama dengan menghapusnya (unset).
+     * Contoh:
+     *   $myClass->option('foo[child]', null);
+     *
+     * Jika anda butuh mengeset property $option['foo']['child'] dengan
+     * value null, maka harus langsung mengedit ke property yang bersangkutan
+     * dalam contoh ini adalah property $option.
+     *
+     * Contoh:
+     * $data_expand = ArrayHelper::dimensionalExpand(['foo[child]' => null]);
+     * $myClass->option = array_replace_recursive($myClass->option, $data_expand);
      */
     public static function propertyEditor($object, $property, $args = array())
     {
@@ -391,5 +406,25 @@ class ArrayHelper
             self::elementEditor($array, 'insert', 'before', $arguments[2], $arguments[3]);
             unset($array[$arguments[2]]);
         }
+    }
+
+    public static function isIndexedKeySorted($array)
+    {
+        for ($x = 0; $x < count($array); $x++) {
+            $key = each($array)['key'];
+            if ($key !== $x) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static function getHighestIndexedKey(Array $array)
+    {
+        if (empty($array)) {
+            return;
+        }
+        $array = self::filterKeyInteger($array);
+        return max(array_keys($array));
     }
 }

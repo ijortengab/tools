@@ -26,13 +26,15 @@ function var_dump($variable_value, $flags = 0) {
     ob_end_clean();
 
     // Modify indent from 2 space to 4 space (like print_r).
-    preg_match_all('/\n(?<space>[ ]+)/', $output, $matches, PREG_SET_ORDER);
-    while ($info = array_shift($matches)) {
-        $space = $info['space'];
-        $replace = str_replace('  ', "\t", $space);
-        $output = preg_replace('/\n[ ]+/', "\n" . $replace, $output, 1);
+    if (is_array($variable_value)) {
+        preg_match_all('/\n(?<space>[ ]+)/', $output, $matches, PREG_SET_ORDER);
+        while ($info = array_shift($matches)) {
+            $space = $info['space'];
+            $replace = str_replace('  ', "\t", $space);
+            $output = preg_replace('/\n[ ]+/', "\n" . $replace, $output, 1);
+        }
+        $output = str_replace("\t", '    ', $output);
     }
-    $output = str_replace("\t", '    ', $output);
 
     if ($flags & ALL) {
 
