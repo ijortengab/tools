@@ -408,8 +408,11 @@ class ArrayHelper
         }
     }
 
-    public static function isIndexedKeySorted($array)
+    public static function isIndexedKeySorted(Array $array)
     {
+        if (empty($array)) {
+            return false;
+        }
         for ($x = 0; $x < count($array); $x++) {
             $key = each($array)['key'];
             if ($key !== $x) {
